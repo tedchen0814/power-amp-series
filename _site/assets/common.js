@@ -145,6 +145,15 @@ const GLOSS = {
 "T<sub>j</sub>":["Junction Temperature", "接面溫度：晶片內部溫度，常見上限 150 °C"],
 "V<sub>be</sub> multiplier":["V<sub>be</sub> Multiplier (Amplified Diode)", "V<sub>be</sub> 倍增器：用一顆電晶體加兩顆電阻產生 V<sub>be</sub>·(1 + R1/R2) 的偏壓，並靠溫度追蹤做熱補償"],
 "ZTC":["Zero Temperature Coefficient Point", "零溫度係數點：MOSFET 在這個閘極電壓（電流）以下是正溫度係數，以上是負溫度係數"],
+"PGND／AGND":["Power Ground / Analog Ground", "功率地（開關大電流）與類比地（回授、調變器、小訊號參考）"],
+"SW node":["Switching Node", "開關節點：MOSFET 輸出接到電感或磁珠的那段銅箔，電壓在數奈秒內跳變"],
+"dV/dt／dI/dt":["Voltage / Current Slew Rate", "電壓、電流變化率；dV/dt 造成共模（電容耦合）雜訊，dI/dt 造成差模（迴路）雜訊"],
+"DM／CM":["Differential Mode / Common Mode", "差模：電流一去一回；共模：兩條線同向流動、經雜散電容回地，通常是線纜輻射的主因"],
+"Snubber":["RC Snubber", "緩衝電路：電阻串電容，吸收寄生電感與電容的振鈴"],
+"C<sub>oss</sub>":["Output Capacitance", "MOSFET 汲源極輸出電容"],
+"RBW":["Resolution Bandwidth", "頻譜量測的解析頻寬：CISPR 在 150 kHz–30 MHz 用 9 kHz，30 MHz–1 GHz 用 120 kHz"],
+"ESD":["Electrostatic Discharge", "靜電放電"],
+"Desense":["Receiver Desensitization", "接收靈敏度劣化：板上雜訊落在 LTE／Wi-Fi／GNSS 頻段，讓手機收訊變差"],
 "IEC 62368-1":["IEC 62368-1 Audio/Video, ICT Equipment Safety", "影音與資通訊設備安全標準，音響溫升測試用 1/8 最大不削波功率的粉紅雜訊"]
 };
 function glossary(box, keys){

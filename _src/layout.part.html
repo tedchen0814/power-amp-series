@@ -1,0 +1,431 @@
+<!--#TITLE-->
+PCB 佈線與 EMI · 功率放大器
+<!--#H1-->
+PCB 佈線與 EMI
+<!--#H1_EN-->
+Hot loops · switching node · grounding · emissions estimates
+<!--#CHIP-->
+E <span>∝</span> f²·A·I
+<!--#LEDE-->
+<p class="lede">Class-D 的 EMI 有兩個來源：開關切換時的<b>差模電流（dI/dt）</b>在迴路裡輻射，與開關節點電壓跳變（<b>dV/dt</b>）經雜散電容推出的<b>共模電流</b>，後者一旦跑到喇叭線或排線上，就是一根天線。這一頁先用可點擊的佈局圖逐一說明每個區塊的規則（可切換手機 Smart PA／傳統 LC 兩種板子、好與壞兩種佈局），再用 Ott 的公式估算輻射、看邊緣速率與展頻對頻譜的影響，最後計算 RC Snubber 並整理成檢查清單。
+  <span class="en">Differential-mode loops radiate through dI/dt; switching-node dV/dt drives common-mode current onto cables. Click through the layout, estimate emissions, see edge-rate and spread-spectrum effects, size a snubber, and tick off the checklist.</span></p>
+<!--#STYLE-->
+.wf-svg{width:100%;height:auto;display:block;min-width:520px}
+.opts{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:10px}
+.opts .lab{font-weight:700;color:var(--muted);font-size:13.5px}
+.zone{cursor:pointer;fill:var(--accent);fill-opacity:.08;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 4;transition:fill-opacity .15s}
+.zone:hover{fill-opacity:.2}
+.zone.sel{fill-opacity:.24;stroke-width:2.6;stroke-dasharray:none}
+.zone.bad{fill:var(--warn);stroke:var(--warn)}
+.znum{font:800 12px var(--mono);fill:var(--paper);pointer-events:none}
+.zdot{pointer-events:none}
+.cu{fill:#c9873b;opacity:.75}
+.cu.sw{fill:var(--warn);opacity:.55}
+.part{fill:var(--paper);stroke:var(--wire);stroke-width:1.6}
+.zlist{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.zlist button{font-size:12.5px;padding:3px 9px}
+.zlist button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.infobox ul{margin:4px 0 0;padding-left:18px;font-size:13.5px}
+.chklist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px 22px}
+.chklist label{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px;align-items:start;font-size:14px;cursor:pointer}
+.chklist input{accent-color:var(--ok);width:16px;height:16px;margin-top:3px}
+.chklist .en{font-size:12px}
+.chklist .tag{font-size:11px;font-weight:800;border-radius:5px;padding:0 6px;margin-left:6px;border:1px solid currentColor;color:var(--muted)}
+.chklist .tag.ph{color:var(--on)}
+.progress{height:10px;border-radius:5px;background:var(--paper-2);overflow:hidden;margin:6px 0 12px}
+.progress i{display:block;height:100%;background:var(--ok);transition:width .2s}
+<!--#BODY-->
+  <section class="panel" aria-labelledby="h-gloss">
+    <h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+    <details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+  </section>
+
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-map">
+      <h2 id="h-map"><span class="step">1</span>可點擊的佈局圖 <span class="en">Clickable layout</span></h2>
+      <div class="opts">
+        <span class="lab">板子 Board</span>
+        <div class="seg" id="segBoard" role="group" aria-label="Board type"><button type="button" data-v="phone">手機 Smart PA</button><button type="button" data-v="classic">傳統 LC 輸出</button></div>
+        <span class="lab">佈局 Layout</span>
+        <div class="seg" id="segQual" role="group" aria-label="Layout quality"><button type="button" data-v="good">好 Good</button><button type="button" data-v="bad">壞 Bad</button></div>
+      </div>
+      <svg class="wf-svg" id="svgMap" viewBox="0 0 640 340" style="min-width:0" role="img" aria-label="Top view of a Class-D amplifier layout with clickable zones"></svg>
+      <div class="zlist" id="zlist"></div>
+      <p class="lede" style="margin:0;font-size:13px">比例：圖上 10 px ≈ 1 mm（示意）。紅色虛框表示目前「壞佈局」的問題位置。<span class="en">Scale: 10 px ≈ 1 mm (schematic).</span></p>
+    </section>
+    <section class="panel" aria-labelledby="h-info">
+      <h2 id="h-info"><span class="step">2</span>這個區塊的規則 <span class="en">Rules for the selected zone</span></h2>
+      <div class="infobox" id="info"></div>
+      <div class="kv" id="loopKv" style="margin-top:12px"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-emi">
+    <h2 id="h-emi"><span class="step">3</span>輻射估算 <span class="en">Radiated emission estimate (Ott, 3 m)</span></h2>
+    <div class="grid-2">
+      <div>
+        <div class="params" id="paramsE"></div>
+        <div class="presets" id="presetsE"><span>套用佈局圖的迴路面積：</span><button type="button" data-a="good">好佈局</button><button type="button" data-a="bad">壞佈局</button></div>
+        <div class="bigres" id="bigE" style="margin-top:12px"></div>
+        <div class="formulas" id="formE"></div>
+      </div>
+      <div>
+        <div class="scroll-x"><svg class="wf-svg" id="svgE" viewBox="0 0 560 320" role="img" aria-label="Estimated field strength versus frequency with FCC class B limit"></svg></div>
+        <div class="legend" id="legE"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-spec">
+    <h2 id="h-spec"><span class="step">4</span>開關波形頻譜：邊緣速率與展頻 <span class="en">Switching-node spectrum: edge rate and spread spectrum</span></h2>
+    <div class="opts">
+      <label class="ctl" style="display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:13.5px"><input type="checkbox" id="chkSsm" checked style="accent-color:var(--accent);width:16px;height:16px"> 加展頻 SSM</label>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="params" id="paramsS"></div>
+        <div class="bigres" id="bigS" style="margin-top:12px"></div>
+        <div class="formulas" id="formS"></div>
+      </div>
+      <div>
+        <div class="scroll-x"><svg class="wf-svg" id="svgS" viewBox="0 0 560 320" role="img" aria-label="Trapezoidal waveform spectrum envelope"></svg></div>
+        <div class="legend" id="legS"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-snub">
+      <h2 id="h-snub"><span class="step">5</span>RC Snubber 計算 <span class="en">RC snubber sizing</span></h2>
+      <div class="params" id="paramsN"></div>
+      <div class="bigres" id="bigN" style="margin-top:12px"></div>
+      <div class="formulas" id="formN"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-chk">
+      <h2 id="h-chk"><span class="step">6</span>佈線檢查清單 <span class="en">Layout checklist</span></h2>
+      <div class="opts"><span class="lab" id="chkCount"></span><button type="button" id="chkReset">全部清除 Reset</button></div>
+      <div class="progress"><i id="chkBar"></i></div>
+      <ul class="chklist" id="chk"></ul>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-notes">
+    <h2 id="h-notes"><span class="step">7</span>注意事項 <span class="en">Notes</span></h2>
+    <div class="note-key"><span><span class="src pdf">原稿</span> 附件原稿內容</span><span><span class="src txt">教科書</span> Ott 等經典 EMC 教科書</span><span><span class="src ti">TI</span> 晶片廠資料</span><span><span class="src add">補充</span> Claude 補充、經驗值</span></div>
+    <div class="ngroups">
+      <div class="ngroup" style="--c:var(--accent)">
+        <h3>估算的限制 <span class="en">Limits of the estimates</span></h3>
+        <ul>
+          <li><b>Ott 公式</b><span class="src txt">教科書</span><br>差模 E = 263×10⁻¹⁶·f²·A·I／r（小迴路、含地面反射）；共模 E = 12.6×10⁻⁷·f·L·I／r（短線、L &lt; λ/4）。都是最壞方向、遠場的估算，適合比較「改了佈局差幾 dB」，不能取代實測。<span class="en">Worst-case far-field estimates — good for comparing layouts, not a substitute for a chamber.</span></li>
+          <li><b>共模才是大宗</b><span class="src txt">教科書</span><br>同樣頻率下，10 cm 線上只要幾 µA 的共模電流，輻射就和數十 mA 的差模迴路相當。所以「喇叭線上的共模雜訊」通常比板上迴路更難過認證。<span class="en">A few µA of common-mode current on a short cable rivals tens of mA in a board loop.</span></li>
+          <li><b>FCC 限值</b><span class="src ti">TI</span><br>Class B、3 m：30–88 MHz 40 dBµV/m、88–216 MHz 43、216–960 MHz 46、960 MHz 以上 54（TI SLOA145 引用）。CISPR 32 Class B 為 10 m 量測，數值不同，圖上只畫 FCC。<span class="en">FCC class B at 3 m, as quoted in TI SLOA145.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--on)">
+        <h3>佈局原則 <span class="en">Layout principles</span></h3>
+        <ul>
+          <li><b>先縮迴路，再談濾波</b><span class="src pdf">原稿</span><br>去耦電容 0.1–1 µF（0402／0603）直接跨在 PVDD 與 PGND 腳位，走線 1–2 mm；輻射和迴路面積成正比，這是成本最低、效果最大的手段。<span class="en">Shrink the hot loop first.</span></li>
+          <li><b>開關節點：夠用就好</b><span class="src pdf">原稿</span><br>SW 銅箔短而粗、留在表層、不過度鋪銅；下一層要有完整的地平面。過孔附近不可有回授線或時鐘線。<span class="en">Keep the switching node compact over an unbroken ground plane.</span></li>
+          <li><b>單點接地 vs 完整地平面</b><span class="src pdf">原稿</span><span class="src add">補充</span><br>原稿建議 PGND／AGND 分區、在 Exposed Pad 單點匯接。手機等多層板常見做法則是一整片完整地平面、靠元件擺位讓大電流不流過類比區；兩種都可能是對的，以晶片規格書的 Layout 建議為準。<span class="en">Split-and-star or one solid plane — follow the datasheet.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--ok)">
+        <h3>手機特有 <span class="en">Phone-specific</span></h3>
+        <ul>
+          <li><b>升壓也有熱迴路</b><span class="src add">補充</span><br>Smart PA 的 Class-H 升壓轉換器本身就是一個 Boost，它的輸出電容 → 開關 → 地的迴路和 Class-D 的 PVDD 迴路一樣要縮小；升壓電感選低 DCR、遮蔽式，額定電流要大於升壓的電流限制。<span class="en">The boost converter adds its own hot loop.</span></li>
+          <li><b>天線靈敏度（Desense）</b><span class="src add">補充</span><br>手機的認證之外還有自己的收訊：Class-D 與升壓的諧波若落在 LTE／Wi-Fi／GNSS 頻段，會讓接收靈敏度變差。放大器、升壓電感與喇叭走線要遠離天線饋入點，必要時加遮蔽罩。<span class="en">Harmonics landing in LTE/Wi-Fi/GNSS bands desense the phone's own receivers.</span></li>
+          <li><b>IV sense 的走線</b><span class="src add">補充</span><br>V／I 感測線要以 Kelvin 方式從規格書指定的點拉出，走成差動對、遠離 SW 節點；感測誤差會直接變成音圈溫度與位移估算的誤差，保護就不準了。<span class="en">Route sense lines Kelvin-style as a pair, away from the switching node.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+<!--#FOOTER-->
+依據：佈局規則取自附件原稿（PCB Layout EMI／EMC 抑制實務）並由 Claude 補充手機 Smart PA 的項目；輻射估算採 H. Ott《Noise Reduction Techniques in Electronic Systems》的差模與共模公式；FCC Class B 限值引用 TI SLOA145。頻譜以梯形波包絡近似（轉折頻率 1／(π·d·T) 與 1／(π·t<sub>r</sub>)），展頻降幅以 10·log(2Δ·f／RBW) 估算理論上限（實務常見 6–10 dB）；Snubber 依「R = √(L／C)、C ≈ 4·C<sub>oss</sub>」的常用起點。皆為教學估算，請以實測與晶片規格書為準。
+<br>Layout rules from the source note plus phone-specific additions; emissions per Ott; FCC limits via TI SLOA145; spectrum and spread-spectrum figures are envelope estimates. Teaching estimates only.
+<!--#SCRIPT-->
+glossary($('gloss'), ['EMI／EMC','DM／CM','dV/dt／dI/dt','SW node','PGND／AGND','PVDD','SSM','RBW','Snubber','C<sub>oss</sub>','FB','ESD','Desense','IV sense','Smart PA','FCC','CISPR']);
+const fmtRows = rows => rows.map(([n, e, r]) => `<div class="f-row"><div class="name">${n}</div><div class="eq">${e}</div><div class="res">${r}</div></div>`).join('');
+const badge = (ok, t) => `<span class="badge ${ok === true ? 'ok' : ok === false ? 'warn' : 'info'}">${t}</span>`;
+const dbuv = e => 20 * Math.log10(Math.max(e, 1e-12) * 1e6);
+function fccB(f){ return f < 88e6 ? 40 : f < 216e6 ? 43 : f < 960e6 ? 46 : 54; }
+
+/* ---------- 1–2: layout map ---------- */
+const L = {board: 'phone', qual: 'good', sel: 'hot'};
+const ZONES = [
+  {id: 'hot', zh: '開關熱迴路', en: 'Hot loop', boards: ['phone', 'classic'], src: ['原稿'],
+    rule: ['去耦電容 0.1–1 µF（0402／0603）直接跨在 PVDD 與 PGND 腳位之間，走線 1–2 mm 以內。', '高頻脈衝電流路徑：PVDD 電容 → 高側 MOSFET → 低側 MOSFET → PGND → 電容地端，包圍面積降到最小。', '電容地端用多顆過孔直接下到地平面。'],
+    why: '差模輻射 E ∝ f²·A·I：面積縮小 10 倍，輻射降 20 dB。'},
+  {id: 'sw', zh: '開關節點 SW', en: 'Switching node', boards: ['phone', 'classic'], src: ['原稿'],
+    rule: ['SW 銅箔短而粗，面積以滿足散熱與通流為限，切忌大面積鋪銅。', '留在表層直連電感或磁珠，避免換層；必須換層時，過孔周圍不可有回授線或時鐘線。', '正下方第二層要有完整、未切割的地平面，利用鏡像電流吸收電場。'],
+    why: 'SW 節點在數奈秒內跳變數伏到十幾伏，每一平方毫米銅箔都是對地的雜散電容，dV/dt 會經它推出共模電流。'},
+  {id: 'star', zh: '接地匯接點', en: 'Ground star point', boards: ['phone', 'classic'], src: ['原稿', '補充'],
+    rule: ['PGND（大電流、高頻）與 AGND（回授、調變器、小訊號參考）分區。', '只在晶片 Exposed Pad 或最靠近電源輸入的地端單點匯接。', '手機多層板常改用一整片完整地平面，靠擺位隔開電流路徑——以規格書建議為準。'],
+    why: '防止 PGND 的地彈（ground bounce）調變類比參考，讓雜訊直接出現在輸出。'},
+  {id: 'stitch', zh: '縫合過孔', en: 'Via stitching', boards: ['phone', 'classic'], src: ['原稿'],
+    rule: ['板邊與功率／類比分界線打一排地過孔，間距小於 λ/20（通常 3–5 mm）。', '讓上下地層形成法拉第籠，防止雜訊沿板邊輻射。'],
+    why: '1 GHz 的 λ/20 約 15 mm；考慮諧波與介質，實務取 3–5 mm 保守。'},
+  {id: 'filt', zh: '輸出濾波', en: 'Output filter', boards: ['phone', 'classic'], src: ['原稿', 'TI'],
+    rule: [],
+    why: ''},
+  {id: 'pair', zh: '差動輸出線', en: 'Output pair', boards: ['phone', 'classic'], src: ['原稿'],
+    rule: ['OUT_P／OUT_N 平行、對稱、緊密耦合走到接頭。', '兩線之間不要穿插其他訊號，長度相等。'],
+    why: '一去一回的電流靠得越近，兩者的磁場越能互相抵消，等效迴路面積越小。'},
+  {id: 'edge', zh: '出線端', en: 'Connector edge', boards: ['phone', 'classic'], src: [],
+    rule: [], why: ''},
+  {id: 'boost', zh: '升壓迴路', en: 'Boost loop', boards: ['phone'], src: ['補充'],
+    rule: ['VBAT 輸入電容、升壓電感、升壓輸出電容都貼近晶片，輸出電容到晶片 PGND 的迴路最小。', '升壓電感選遮蔽式、低 DCR，額定電流大於升壓的電流限制。', '電感下方不要走敏感訊號。'],
+    why: 'Smart PA 的 Class-H 升壓本身就是一個開關式 Boost，有自己的 dI/dt 熱迴路。'},
+  {id: 'iv', zh: 'IV sense 走線', en: 'IV-sense lines', boards: ['phone'], src: ['補充'],
+    rule: ['V／I 感測線依規格書指定的點以 Kelvin 方式拉出。', '走成差動對，遠離 SW 節點與升壓電感。'],
+    why: '感測誤差會直接變成音圈溫度與振膜位移的估算誤差，喇叭保護就不準。'},
+  {id: 'ant', zh: '天線區', en: 'Antenna keep-out', boards: ['phone'], src: ['補充'],
+    rule: ['放大器、升壓電感、喇叭走線遠離天線饋入點與天線淨空區。', '必要時加遮蔽罩，罩框地過孔要密。'],
+    why: '手機除了認證，還要顧自己的收訊：諧波落在 LTE／Wi-Fi／GNSS 頻段會造成 desense。'},
+  {id: 'fb', zh: '回授與輸入線', en: 'Feedback and input', boards: ['classic'], src: ['原稿'],
+    rule: ['回授線（FB）與小訊號輸入走在 AGND 上方，遠離 SW 節點與電感。', '不要和 SW 走線平行，跨層時避開 SW 的過孔。'],
+    why: '回授線拾取的雜訊會被放大器當成訊號，直接出現在喇叭上。'}
+];
+const FILT = {
+  phone: {rule: ['每個輸出接一顆 Ferrite bead，後面接 100 pF–1 nF 對地電容（見 05 頁）。', '電容地端直接下地平面；磁珠與電容貼近晶片輸出腳。', '磁珠低頻電流只用到額定的 30–60%。'], why: 'Filter-free 輸出仍有延伸到數百 MHz 的諧波；磁珠＋小電容在 30 MHz 以上提供衰減。', src: ['TI']},
+  classic: {rule: ['LC 緊接在 SW 節點之後；用遮蔽式電感。', '差模電容 C_Δ 跨在兩線之間，共模電容 C_C 各自對 PGND，地端要短。', '電感遠離回授線與類比區。'], why: 'LC 把 PWM 載波留在板上，不讓它跑到喇叭線；共模電容處理 dV/dt 推出的共模電流。', src: ['原稿']}
+};
+const EDGE = {
+  phone: {rule: ['喇叭彈片／接點附近放 ESD 保護元件，地端短。', '若喇叭用 FPC 或長線拉到機身另一端，預留 FB＋C 位置。'], why: '接點是外部 ESD 與輻射的進出口。', src: ['補充']},
+  classic: {rule: ['連接器出線端預留共模扼流圈或高頻磁珠（如 100 MHz 時 ≥ 600 Ω、額定電流足夠）。', '搭配 100–470 pF 對地小電容（穿心電容最好），壓 30 MHz–1 GHz 的線束輻射。'], why: '無法加金屬罩時，最後一道防線是在線纜離開板子的地方擋住共模電流。', src: ['原稿']}
+};
+const SRC_CLS = {'原稿': 'pdf', 'TI': 'ti', '補充': 'add', '教科書': 'txt'};
+
+// geometry (svg units; 10 px ≈ 1 mm)
+function geo(){
+  const good = L.qual === 'good', ph = L.board === 'phone';
+  return {
+    cap: good ? {x: 218, y: 188, w: 22, h: 44} : {x: 56, y: 188, w: 26, h: 44},
+    loop: good ? [[218, 176], [250, 176], [250, 244], [218, 244]] : [[56, 176], [250, 176], [250, 244], [56, 244]],
+    sw: good ? [{x: 350, y: 172, w: 36, h: 16}, {x: 350, y: 232, w: 36, h: 16}] : [{x: 350, y: 150, w: 70, h: 50}, {x: 350, y: 222, w: 70, h: 50}],
+    pairY: good ? [196, 224] : [150, 270],
+    fx: good ? 386 : 420
+  };
+}
+function polyArea(p){ let a = 0; for (let i = 0; i < p.length; i++){ const [x1, y1] = p[i], [x2, y2] = p[(i + 1) % p.length]; a += x1 * y2 - x2 * y1; } return Math.abs(a) / 2; }
+const areaMM = q => { const s = L.qual; L.qual = q; const a = polyArea(geo().loop) / 100; L.qual = s; return a; };
+
+function drawMap(){
+  const svg = $('svgMap'); clear(svg);
+  const G = geo(), ph = L.board === 'phone', good = L.qual === 'good';
+  svgEl('rect', {x: 20, y: 20, width: 600, height: 300, rx: 12, fill: 'var(--paper-2)', stroke: 'var(--line)', 'stroke-width': 2}, svg);
+  // stitching vias
+  for (let x = 32; x < 612; x += 18){ svgEl('circle', {cx: x, cy: 30, r: 2.6, fill: 'var(--muted)'}, svg); svgEl('circle', {cx: x, cy: 310, r: 2.6, fill: 'var(--muted)'}, svg); }
+  for (let y = 48; y < 304; y += 18){ svgEl('circle', {cx: 30, cy: y, r: 2.6, fill: 'var(--muted)'}, svg); svgEl('circle', {cx: 610, cy: y, r: 2.6, fill: 'var(--muted)'}, svg); }
+  if (ph){
+    svgEl('rect', {x: 470, y: 36, width: 132, height: 76, rx: 6, fill: 'var(--off)', opacity: .1}, svg);
+    svgEl('text', {x: 536, y: 80, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, '天線淨空區');
+    // boost: VBAT cap, inductor, boost cap
+    svgEl('path', {d: 'M30 80 H70 M96 80 H120 M180 80 H286 V160 M200 120 H220 M220 120 V160', class: 'wire'}, svg);
+    svgEl('rect', {x: 70, y: 70, width: 26, height: 20, class: 'part'}, svg); svgEl('text', {x: 72, y: 66, class: 'lbl-sm'}, svg, 'C_VBAT');
+    svgEl('rect', {x: 120, y: 66, width: 60, height: 28, rx: 6, class: 'part'}, svg); svgEl('text', {x: 150, y: 85, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, 'L_boost');
+    svgEl('rect', {x: 196, y: 120, width: 26, height: 20, class: 'part'}, svg); svgEl('text', {x: 182, y: 152, class: 'lbl-sm'}, svg, 'C_boost');
+    svgEl('text', {x: 34, y: 62, class: 'lbl-sm'}, svg, 'VBAT');
+  } else {
+    svgEl('path', {d: 'M300 160 V130 H470 V196 M310 160 V140 H480 V224', class: 'wire', 'stroke-dasharray': '4 3'}, svg);
+    svgEl('text', {x: 330, y: 124, class: 'lbl-sm'}, svg, 'FB 回授');
+    svgEl('path', {d: 'M30 210 H250', class: 'wire'}, svg); svgEl('text', {x: 34, y: 204, class: 'lbl-sm'}, svg, 'IN 類比輸入');
+  }
+  // PVDD in, bulk cap, decoupling cap, hot loop
+  svgEl('path', {d: `M30 176 H250 M30 244 H250 M${G.cap.x + G.cap.w / 2} 176 V${G.cap.y} M${G.cap.x + G.cap.w / 2} ${G.cap.y + G.cap.h} V244`, class: 'wire'}, svg);
+  svgEl('text', {x: 34, y: 170, class: 'lbl-sm'}, svg, 'PVDD'); svgEl('text', {x: 34, y: 260, class: 'lbl-sm'}, svg, 'PGND');
+  svgEl('polygon', {points: G.loop.map(p => p.join(',')).join(' '), fill: 'var(--on)', opacity: .18, stroke: 'var(--on)', 'stroke-width': 1.5}, svg);
+  svgEl('rect', Object.assign({class: 'part'}, {x: G.cap.x, y: G.cap.y, width: G.cap.w, height: G.cap.h}), svg);
+  svgEl('text', {x: G.cap.x - 2, y: G.cap.y + G.cap.h + 14, class: 'lbl-sm'}, svg, 'C_dec');
+  // IC
+  svgEl('rect', {x: 250, y: 160, width: 100, height: 100, rx: 6, fill: 'var(--ink)', opacity: .88}, svg);
+  svgEl('rect', {x: 278, y: 188, width: 44, height: 44, fill: 'none', stroke: 'var(--paper)', 'stroke-dasharray': '3 3'}, svg);
+  svgEl('text', {x: 300, y: 180, 'text-anchor': 'middle', fill: 'var(--paper)', style: 'font:700 12px var(--body)'}, svg, ph ? 'Smart PA' : 'Class-D IC');
+  svgEl('text', {x: 300, y: 252, 'text-anchor': 'middle', fill: 'var(--paper)', style: 'font:500 10px var(--body)'}, svg, 'EP 散熱墊');
+  // SW copper
+  G.sw.forEach(r => svgEl('rect', {x: r.x, y: r.y, width: r.w, height: r.h, class: 'cu sw'}, svg));
+  // filter
+  const fx = G.fx;
+  if (ph){
+    [[180, 'FB1'], [240, 'FB2']].forEach(([y, n]) => { svgEl('rect', {x: fx, y: y - 7, width: 22, height: 14, class: 'part'}, svg); svgEl('text', {x: fx, y: y - 11, class: 'lbl-sm'}, svg, n); });
+    [[180, 150], [240, 270]].forEach(([y, yc]) => { svgEl('path', {d: `M${fx + 30} ${y} V${yc}`, class: 'wire'}, svg); svgEl('rect', {x: fx + 22, y: yc - (yc < y ? 14 : 0), width: 16, height: 14, class: 'part'}, svg); });
+  } else {
+    [[180, 'L1'], [240, 'L2']].forEach(([y, n]) => { svgEl('rect', {x: fx, y: y - 12, width: 40, height: 24, rx: 5, class: 'part'}, svg); svgEl('text', {x: fx + 20, y: y + 4, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, n); });
+    svgEl('rect', {x: fx + 52, y: 196, width: 16, height: 28, class: 'part'}, svg); svgEl('text', {x: fx + 72, y: 214, class: 'lbl-sm'}, svg, 'C_Δ');
+  }
+  // output pair to connector
+  const [ya, yb] = G.pairY, x0 = ph ? fx + 22 : fx + 40;
+  svgEl('path', {d: `M350 180 H${fx} M350 240 H${fx} M${x0} 180 H${x0 + 10} V${ya} H560 M${x0} 240 H${x0 + 10} V${yb} H560`, class: 'wire'}, svg);
+  if (!ph){ svgEl('rect', {x: 512, y: Math.min(ya, yb) - 8, width: 26, height: Math.abs(yb - ya) + 16, rx: 5, class: 'part'}, svg); svgEl('text', {x: 506, y: Math.min(ya, yb) - 12, class: 'lbl-sm'}, svg, 'CM choke'); }
+  svgEl('rect', {x: 560, y: Math.min(ya, yb) - 16, width: 44, height: Math.abs(yb - ya) + 32, rx: 5, fill: 'var(--wire)', opacity: .8}, svg);
+  svgEl('text', {x: 582, y: Math.max(ya, yb) + 34, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, ph ? '喇叭接點' : '喇叭端子');
+  if (ph){ svgEl('path', {d: `M545 ${ya} C 470 ${ya - 40}, 380 130, 342 160 M545 ${yb} C 470 ${yb + 40}, 380 300, 342 260`, fill: 'none', stroke: 'var(--teal)', 'stroke-width': 1.4, 'stroke-dasharray': '3 3'}, svg); svgEl('text', {x: 450, y: 136, class: 'lbl-sm', fill: 'var(--teal)'}, svg, 'VSNS'); }
+  // zones
+  const Z = {
+    hot: G.loop.reduce((b, [x, y]) => ({x0: Math.min(b.x0, x), y0: Math.min(b.y0, y), x1: Math.max(b.x1, x), y1: Math.max(b.y1, y)}), {x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9}),
+    sw: {x0: 346, y0: G.sw[0].y - 4, x1: G.sw[0].x + G.sw[0].w + 4, y1: G.sw[1].y + G.sw[1].h + 4},
+    star: {x0: 274, y0: 184, x1: 326, y1: 236},
+    stitch: {x0: 22, y0: 22, x1: 618, y1: 38},
+    filt: {x0: fx - 6, y0: ph ? 140 : 162, x1: ph ? fx + 44 : fx + 76, y1: ph ? 288 : 258},
+    pair: {x0: x0 + 14, y0: Math.min(ya, yb) - 10, x1: 508, y1: Math.max(ya, yb) + 10},
+    edge: {x0: ph ? 552 : 506, y0: Math.min(ya, yb) - 22, x1: 608, y1: Math.max(ya, yb) + 22},
+    boost: {x0: 64, y0: 58, x1: 230, y1: 146},
+    iv: {x0: 400, y0: 126, x1: 470, y1: 146},
+    ant: {x0: 470, y0: 36, x1: 602, y1: 112},
+    fb: {x0: 320, y0: 116, x1: 486, y1: 146}
+  };
+  const bad = good ? [] : ['hot', 'sw', 'pair'];
+  const list = ZONES.filter(z => z.boards.includes(L.board));
+  list.forEach((z, i) => {
+    const r = Z[z.id];
+    const el = svgEl('rect', {x: r.x0, y: r.y0, width: r.x1 - r.x0, height: r.y1 - r.y0, rx: 6, class: 'zone' + (L.sel === z.id ? ' sel' : '') + (bad.includes(z.id) ? ' bad' : ''), tabindex: 0, role: 'button', 'aria-label': z.zh}, svg);
+    el.addEventListener('click', () => { L.sel = z.id; drawMap(); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); L.sel = z.id; drawMap(); } });
+    svgEl('circle', {cx: r.x0 + 9, cy: r.y0 + 9, r: 9, class: 'zdot', fill: bad.includes(z.id) ? 'var(--warn)' : 'var(--accent)'}, svg);
+    svgEl('text', {x: r.x0 + 9, y: r.y0 + 13, 'text-anchor': 'middle', class: 'znum'}, svg, i + 1);
+  });
+  if (!list.find(z => z.id === L.sel)) L.sel = 'hot';
+  $('zlist').innerHTML = list.map((z, i) => `<button type="button" data-z="${z.id}" aria-pressed="${z.id === L.sel}">${i + 1} ${z.zh}</button>`).join('');
+  showInfo(list.findIndex(z => z.id === L.sel) + 1);
+}
+$('zlist').addEventListener('click', e => { const b = e.target.closest('button[data-z]'); if (b){ L.sel = b.dataset.z; drawMap(); } });
+function showInfo(no){
+  let z = Object.assign({}, ZONES.find(q => q.id === L.sel));
+  if (z.id === 'filt') Object.assign(z, FILT[L.board]);
+  if (z.id === 'edge') Object.assign(z, EDGE[L.board]);
+  const good = L.qual === 'good';
+  const badNote = {hot: '壞佈局：去耦電容放在遠處的大電容旁，電流繞一大圈才回到晶片。', sw: '壞佈局：SW 銅箔鋪太大，雜散電容與共模電流跟著變大。', pair: '壞佈局：OUT_P／OUT_N 分開走，兩線之間形成大迴路，磁場無法抵消。'}[z.id];
+  $('info').style.setProperty('--c', !good && badNote ? 'var(--warn)' : 'var(--accent)');
+  $('info').innerHTML = `<h3><span class="tag">${no}</span>${z.zh} <span class="en" style="display:inline">${z.en}</span>${z.src.map(s => `<span class="src ${SRC_CLS[s]}">${s}</span>`).join('')}</h3>
+    <ul>${z.rule.map(r => `<li>${r}</li>`).join('')}</ul>
+    <p style="margin-top:8px"><b>為什麼</b>：${z.why}</p>${!good && badNote ? `<p style="color:var(--warn);font-weight:700">${badNote}</p>` : ''}`;
+  const ag = areaMM('good'), ab = areaMM('bad');
+  $('loopKv').innerHTML = `<div style="--c:var(--ok)">好佈局熱迴路面積<b>${fx(ag, 1)} mm²</b></div><div style="--c:var(--warn)">壞佈局熱迴路面積<b>${fx(ab, 1)} mm²</b></div><div>差模輻射差距<b>${fx(20 * Math.log10(ab / ag), 1)} dB</b></div>`;
+}
+segGroup('segBoard', v => { L.board = v; drawMap(); }); setSeg('segBoard', 'phone');
+segGroup('segQual', v => { L.qual = v; drawMap(); }); setSeg('segQual', 'good');
+drawMap();
+
+/* ---------- 3: emissions ---------- */
+const E = {A: 20, Idm: 5, f: 100, Lc: 10, Icm: 10, r: 3};
+const syncE = sliders([
+  {k: 'A', zh: '迴路面積 A', en: 'Loop area', min: 1, max: 500, step: 1, fmt: v => v + ' mm²'},
+  {k: 'Idm', zh: '差模諧波電流', en: 'DM current at f', min: 0.1, max: 100, step: 0.1, fmt: v => fx(v, 1) + ' mA'},
+  {k: 'Lc', zh: '線纜長度 L', en: 'Cable length', min: 1, max: 200, step: 1, fmt: v => v + ' cm'},
+  {k: 'Icm', zh: '共模電流', en: 'CM current on cable', min: 0.1, max: 200, step: 0.1, fmt: v => fx(v, 1) + ' µA'},
+  {k: 'f', zh: '頻率 f', en: 'Frequency', min: 30, max: 1000, step: 1, fmt: v => v + ' MHz'}
+], E, $('paramsE'), () => drawE());
+$('presetsE').addEventListener('click', e => { const b = e.target.closest('button[data-a]'); if (b){ E.A = Math.round(areaMM(b.dataset.a)); syncE(); drawE(); } });
+const Edm = (f, A, I) => 263e-16 * f * f * A * I / E.r;
+const Ecm = (f, Lm, I) => 12.6e-7 * Math.min(f, 3e8 / (4 * Lm)) * Lm * I / E.r;
+function drawE(){
+  const f = E.f * 1e6, A = E.A * 1e-6, Id = E.Idm * 1e-3, Lm = E.Lc / 100, Ic = E.Icm * 1e-6;
+  const ed = dbuv(Edm(f, A, Id)), ec = dbuv(Ecm(f, Lm, Ic)), lim = fccB(f);
+  const tot = 20 * Math.log10(Math.pow(10, ed / 20) + Math.pow(10, ec / 20));
+  $('bigE').innerHTML = `<div><span>差模 DM</span><b>${fx(ed, 1)} dBµV/m</b></div><div><span>共模 CM</span><b>${fx(ec, 1)} dBµV/m</b></div><div><span>FCC Class B 限值</span><b>${lim} dBµV/m</b></div><div><span>餘裕（合計）</span><b style="color:${lim - tot > 6 ? 'var(--ok)' : lim - tot > 0 ? 'var(--on)' : 'var(--warn)'}">${fx(lim - tot, 1)} dB</b></div>`;
+  $('formE').innerHTML = fmtRows([
+    ['差模 Differential mode', `E = 263×10⁻¹⁶·f²·A·I／r = 263e-16 × (${E.f} M)² × ${E.A} mm² × ${E.Idm} mA ／ 3 m`, eng(Edm(f, A, Id), 'V/m')],
+    ['共模 Common mode', `E = 12.6×10⁻⁷·f·L·I／r = 12.6e-7 × ${E.f} M × ${E.Lc} cm × ${E.Icm} µA ／ 3 m${f > 3e8 / (4 * Lm) ? '（線長已超過 λ/4，頻率以 λ/4 共振點計）' : ''}`, eng(Ecm(f, Lm, Ic), 'V/m')],
+    ['同樣輻射需要的差模電流', `要讓差模追上這個共模輻射，需要 I<sub>DM</sub> = ${eng(Ecm(f, Lm, Ic) / Edm(f, A, 1), 'A')}（同一個迴路面積）`, fx(Ecm(f, Lm, Ic) / Edm(f, A, 1) / Ic, 0) + '×']
+  ]);
+  const svg = $('svgE'); clear(svg);
+  const fs = [...Array(121).keys()].map(i => 30e6 * Math.pow(1e9 / 30e6, i / 120));
+  const ch = chart(svg, {x0: 58, y0: 22, w: 484, h: 250, xlog: true, xr: [30e6, 1e9], yr: [0, 80], xticks: [30e6, 100e6, 300e6, 1e9], xfmt: v => eng(v, 'Hz', 2), yticks: [0, 20, 40, 60, 80], yfmt: v => v, ylabel: 'dBµV/m @ 3 m（電流隨頻率固定的最壞估算）', xlabel: '頻率 Frequency'});
+  ch.line([[30e6, 40], [88e6, 40], [88e6, 43], [216e6, 43], [216e6, 46], [960e6, 46], [960e6, 54], [1e9, 54]], {stroke: 'var(--warn)', 'stroke-width': 2.4});
+  ch.line(fs.map(q => [q, dbuv(Edm(q, A, Id))]), {stroke: 'var(--accent)', 'stroke-width': 2.4});
+  ch.line(fs.map(q => [q, dbuv(Ecm(q, Lm, Ic))]), {stroke: 'var(--off)', 'stroke-width': 2.4});
+  svgEl('line', {x1: ch.X(f), x2: ch.X(f), y1: 22, y2: 272, stroke: 'var(--ink)', 'stroke-dasharray': '4 4'}, ch.plot);
+  $('legE').innerHTML = [['var(--accent)', '差模迴路 DM loop'], ['var(--off)', '共模線纜 CM cable'], ['var(--warn)', 'FCC Class B（3 m）']].map(([c, t]) => `<span><i style="border-top-style:solid;color:${c};border-color:${c}"></i>${t}</span>`).join('');
+}
+drawE();
+
+/* ---------- 4: spectrum ---------- */
+const S = {V: 11, fsw: 384, tr: 3, dlt: 5};
+sliders([
+  {k: 'V', zh: 'SW 擺幅 V', en: 'Switching amplitude', min: 3, max: 50, step: 0.5, fmt: v => fx(v, 1) + ' V'},
+  {k: 'fsw', zh: '開關頻率 f<sub>sw</sub>', en: 'Switching freq', min: 200, max: 1500, step: 1, fmt: v => v + ' kHz'},
+  {k: 'tr', zh: '上升時間 t<sub>r</sub>', en: 'Edge (rise) time', min: 0.5, max: 30, step: 0.5, fmt: v => fx(v, 1) + ' ns'},
+  {k: 'dlt', zh: '展頻幅度 ±Δ', en: 'Spread ±Δ', min: 1, max: 15, step: 0.5, fmt: v => '±' + fx(v, 1) + '%'}
+], S, $('paramsS'), () => drawS(), 's');
+$('chkSsm').addEventListener('change', drawS);
+function env(f, tr){
+  const d = 0.5, T = 1 / (S.fsw * 1e3), f1 = 1 / (Math.PI * d * T), f2 = 1 / (Math.PI * tr * 1e-9);
+  return 2 * S.V * d / Math.sqrt(1 + (f / f1) ** 2) / Math.sqrt(1 + (f / f2) ** 2);
+}
+const rbw = f => f < 30e6 ? 9e3 : 120e3;
+const ssmRed = f => $('chkSsm').checked ? Math.max(0, 10 * Math.log10(2 * S.dlt / 100 * f / rbw(f))) : 0;
+function drawS(){
+  const svg = $('svgS'); clear(svg);
+  const fs = [...Array(161).keys()].map(i => 1e5 * Math.pow(1e4, i / 160));
+  const db = (f, tr) => 20 * Math.log10(env(f, tr) * 1e6);
+  const ch = chart(svg, {x0: 58, y0: 22, w: 484, h: 250, xlog: true, xr: [1e5, 1e9], yr: [40, 160], xticks: [1e5, 1e6, 1e7, 1e8, 1e9], xfmt: v => eng(v, 'Hz', 1), yticks: [40, 60, 80, 100, 120, 140, 160], yfmt: v => v, ylabel: '諧波包絡 dBµV（SW 節點電壓）', xlabel: '頻率 Frequency'});
+  svgEl('rect', {x: ch.X(30e6), y: 22, width: ch.X(1e9) - ch.X(30e6), height: 250, fill: 'var(--warn)', opacity: .06}, ch.plot);
+  ch.line(fs.map(f => [f, db(f, 1)]), {stroke: 'var(--muted)', 'stroke-dasharray': '5 4', 'stroke-width': 1.6});
+  ch.line(fs.map(f => [f, db(f, S.tr)]), {stroke: 'var(--accent)', 'stroke-width': 2.6});
+  if ($('chkSsm').checked) ch.line(fs.map(f => [f, db(f, S.tr) - ssmRed(f)]), {stroke: 'var(--ok)', 'stroke-width': 2.6});
+  const f1 = 2 * S.fsw * 1e3 / Math.PI, f2 = 1 / (Math.PI * S.tr * 1e-9);
+  [[f1, '1/(π·d·T)'], [f2, '1/(π·t_r)']].forEach(([f, l]) => { svgEl('line', {x1: ch.X(f), x2: ch.X(f), y1: 22, y2: 272, stroke: 'var(--on)', 'stroke-dasharray': '3 4'}, ch.plot); svgEl('text', {x: ch.X(f) + 4, y: 36, class: 'ref-lbl', fill: 'var(--on)'}, ch.plot, l + ' = ' + eng(f, 'Hz', 2)); });
+  $('legS').innerHTML = [['var(--muted)', 't_r = 1 ns 參考', 'dashed'], ['var(--accent)', `t_r = ${S.tr} ns`, 'solid'], ['var(--ok)', '加展頻後的峰值（理論上限）', 'solid']].map(([c, t, s]) => `<span><i style="border-top-style:${s};color:${c};border-color:${c}"></i>${t}</span>`).join('') + '<span>淡紅底：30 MHz–1 GHz 輻射量測頻段</span>';
+  const at = f => [db(f, 1) - db(f, S.tr), ssmRed(f)];
+  const [e30, s30] = at(30e6), [e100, s100] = at(100e6), [e300, s300] = at(300e6);
+  $('bigS').innerHTML = `<div><span>100 MHz 邊緣放慢</span><b>−${fx(e100, 1)} dB</b></div><div><span>100 MHz 展頻（理論上限）</span><b>−${fx(s100, 1)} dB</b></div><div><span>合計</span><b>−${fx(e100 + s100, 1)} dB</b></div>`;
+  $('formS').innerHTML = fmtRows([
+    ['轉折頻率 Corners', `f<sub>1</sub> = 1／(π·d·T) = ${eng(f1, 'Hz', 3)}（之後 −20 dB/dec）；f<sub>2</sub> = 1／(π·t<sub>r</sub>) = ${eng(f2, 'Hz', 3)}（之後 −40 dB/dec）`, eng(f2, 'Hz', 3)],
+    ['邊緣放慢的效果', `相對 t<sub>r</sub> = 1 ns：30 MHz −${fx(e30, 1)} dB、100 MHz −${fx(e100, 1)} dB、300 MHz −${fx(e300, 1)} dB；代價是切換損耗增加`, '−' + fx(e100, 1) + ' dB'],
+    ['展頻的效果 SSM', `理論上限 ≈ 10·log(2Δ·f／RBW)，RBW 在 30 MHz 以下 9 kHz、以上 120 kHz：30 MHz −${fx(s30, 1)} dB、100 MHz −${fx(s100, 1)} dB、300 MHz −${fx(s300, 1)} dB。實際降幅通常小很多：調變速率、準峰值檢波器的時間常數，以及由邊緣決定的寬頻雜訊都不會被展頻打散`, '≤ −' + fx(s100, 1) + ' dB'],
+    ['原稿經驗值', '展頻或邊緣速率控制約犧牲 1%–2% 效率，換 EMI 頻譜峰值下降約 6–10 dB（原稿）', '6–10 dB']
+  ]);
+}
+drawS();
+
+/* ---------- 5: snubber ---------- */
+const N = {Lp: 2, Coss: 200, V: 11, fsw: 384};
+sliders([
+  {k: 'Lp', zh: '迴路寄生電感 L<sub>p</sub>', en: 'Parasitic inductance', min: 0.5, max: 20, step: 0.1, fmt: v => fx(v, 1) + ' nH'},
+  {k: 'Coss', zh: 'MOSFET C<sub>oss</sub>', en: 'Output capacitance', min: 20, max: 2000, step: 10, fmt: v => v + ' pF'},
+  {k: 'V', zh: 'SW 擺幅', en: 'Switching amplitude', min: 3, max: 60, step: 0.5, fmt: v => fx(v, 1) + ' V'},
+  {k: 'fsw', zh: '開關頻率', en: 'Switching freq', min: 200, max: 1500, step: 1, fmt: v => v + ' kHz'}
+], N, $('paramsN'), () => drawN(), 'n');
+function drawN(){
+  const Lp = N.Lp * 1e-9, Co = N.Coss * 1e-12, fr = 1 / (2 * Math.PI * Math.sqrt(Lp * Co)), Z0 = Math.sqrt(Lp / Co);
+  const Cs = 4 * Co, P = Cs * N.V * N.V * N.fsw * 1e3;
+  $('bigN').innerHTML = `<div><span>振鈴頻率</span><b>${eng(fr, 'Hz', 3)}</b></div><div><span>R<sub>snub</sub></span><b>${eng(nearestE(Z0), 'Ω')}</b></div><div><span>C<sub>snub</sub></span><b>${eng(nearestE(Cs), 'F')}</b></div><div><span>Snubber 損耗</span><b>${eng(P, 'W')}</b></div>`;
+  $('formN').innerHTML = fmtRows([
+    ['振鈴頻率 Ringing', `f<sub>ring</sub> = 1／(2π·√(L<sub>p</sub>·C<sub>oss</sub>)) = 1／(2π·√(${N.Lp} n × ${N.Coss} p))`, eng(fr, 'Hz', 3)],
+    ['特性阻抗 → R', `R ≈ Z<sub>0</sub> = √(L<sub>p</sub>／C<sub>oss</sub>)，取 E12 ${eng(nearestE(Z0), 'Ω')}`, eng(Z0, 'Ω')],
+    ['電容 C', `C ≈ 4·C<sub>oss</sub>（讓 R 主導阻尼、又不讓 C 太大）`, eng(Cs, 'F')],
+    ['損耗 Power', `P = C·V²·f<sub>sw</sub> = ${eng(Cs, 'F')} × ${fx(N.V, 1)}² × ${N.fsw} k；兩個 SW 節點各一組時再 ×2`, eng(P, 'W')],
+    ['原稿範圍', '1–4.7 Ω＋100–470 pF 到 PGND（原稿），可對照上面的計算結果', '—'],
+    ['實測法 Measure first', '先量振鈴頻率 f<sub>1</sub>，在 SW 對地加電容 C<sub>add</sub> 讓頻率降到 f<sub>1</sub>／2，則寄生 C = C<sub>add</sub>／3、L = 1／[(2πf<sub>1</sub>)²·C]', '—']
+  ]);
+}
+drawN();
+
+/* ---------- 6: checklist (remembered in this browser only) ---------- */
+const CHK = [
+  ['去耦電容直接跨在 PVDD／PGND 腳位，走線 ≤ 2 mm', 'Decoupling at the pins', ''],
+  ['熱迴路包圍面積最小，電容地端多顆過孔下地', 'Minimal hot-loop area', ''],
+  ['SW 銅箔短而粗、留在表層、沒有過度鋪銅', 'Compact SW copper on top layer', ''],
+  ['SW 正下方第二層是完整地平面', 'Solid L2 ground under SW', ''],
+  ['回授／輸入／時鐘線遠離 SW 與電感，不跨 SW 過孔', 'Sensitive lines away from SW', ''],
+  ['PGND／AGND 依規格書：單點匯接或完整地平面', 'Grounding per datasheet', ''],
+  ['板邊與分界線縫合過孔間距 3–5 mm', 'Via stitching 3–5 mm', ''],
+  ['OUT_P／OUT_N 平行、等長、緊耦合', 'Tightly coupled output pair', ''],
+  ['輸出濾波（LC 或 FB＋C）貼近晶片，地端短', 'Output filter close to the IC', ''],
+  ['出線端預留共模扼流圈／磁珠＋小電容', 'Common-mode filter at the connector', ''],
+  ['SW 節點預留 RC Snubber 位置', 'Snubber footprint on SW', ''],
+  ['升壓電感、輸入與輸出電容迴路最小', 'Tight boost loop', 'ph'],
+  ['IV sense 依規格書 Kelvin 拉線、走差動對', 'Kelvin IV-sense routing', 'ph'],
+  ['放大器與喇叭線遠離天線淨空區，必要時加遮蔽罩', 'Clear of antennas; shield can', 'ph'],
+  ['喇叭接點附近有 ESD 保護', 'ESD at the speaker contacts', 'ph']
+];
+const KEY = 'amp-layout-checklist';
+let done = {};
+try { done = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { done = {}; }
+function drawChk(){
+  $('chk').innerHTML = CHK.map(([zh, en, t], i) => `<li><label><input type="checkbox" data-i="${i}" ${done[i] ? 'checked' : ''}><span>${zh}${t === 'ph' ? '<span class="tag ph">手機</span>' : ''}<span class="en">${en}</span></span></label></li>`).join('');
+  const n = CHK.filter((_, i) => done[i]).length;
+  $('chkCount').textContent = `已完成 ${n}／${CHK.length}`; $('chkBar').style.width = (n / CHK.length * 100) + '%';
+}
+$('chk').addEventListener('change', e => { const i = e.target.dataset.i; if (i == null) return; done[i] = e.target.checked; try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (er) {} drawChk(); });
+$('chkReset').addEventListener('click', () => { done = {}; try { localStorage.removeItem(KEY); } catch (er) {} drawChk(); });
+drawChk();

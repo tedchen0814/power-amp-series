@@ -17,9 +17,9 @@ SERIES = [  # (key, number, nav name, zh, single-file stem, site file)
     ("thermal", "03", "THERMAL", "熱設計與熱奔潰", "03-THERMAL", "thermal.html"),
     ("classd", "04", "CLASS-D", "開關放大原理", "04-CLASSD", "class-d.html"),
     ("filter", "05", "OUTPUT FILTER", "輸出濾波器設計", "05-FILTER", "output-filter.html"),
+    ("layout", "06", "LAYOUT · EMI", "PCB 佈線與 EMI", "06-LAYOUT", "layout-emi.html"),
 ]
 SOON = [  # planned pages, shown greyed out in the nav
-    ("06", "LAYOUT · EMI", "PCB 佈線"),
     ("07", "RF PA", "射頻功率放大器"),
 ]
 EXTERNAL = [
