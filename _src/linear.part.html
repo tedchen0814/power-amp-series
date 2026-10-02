@@ -1,0 +1,369 @@
+<!--#TITLE-->
+A／B／AB 線性輸出級 · 功率放大器
+<!--#H1-->
+A／B／AB 線性輸出級
+<!--#H1_EN-->
+Push-pull emitter follower · bias, crossover and gm doubling
+<!--#CHIP-->
+I<sub>Q</sub>·R<sub>e</sub> <span>≈</span> 26 mV
+<!--#LEDE-->
+<p class="lede">線性功率放大器的輸出級幾乎都是<b>互補推挽射極跟隨器</b>：NPN 推正半週、PNP 拉負半週，兩顆管子之間的偏壓電壓決定靜態電流 I<sub>Q</sub>。偏壓太小，0 V 附近兩管都不導通，出現<b>交越失真</b>；偏壓太大，兩管同時導通的區域增益變高（<b>gm doubling</b>），失真反而變大；偏壓再大到整個週期兩管都導通，就是 <b>Class-A</b>。這一頁用 BJT 的指數方程式即時計算整個輸出級，拖動偏壓與輸出大小，看增益起伏、失真波形、諧波與發熱怎麼變。
+  <span class="en">A complementary emitter follower: too little bias leaves a dead band, too much doubles the gain in the overlap region, and enough bias to keep both devices on all the time is Class A. Everything here is computed from the exponential BJT equations.</span></p>
+<!--#STYLE-->
+.wf-svg{width:100%;height:auto;display:block;min-width:520px}
+.circ-svg{width:100%;height:auto;display:block;max-width:460px;margin:0 auto}
+.opts{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:10px}
+.opts .lab{font-weight:700;color:var(--muted);font-size:13.5px}
+.harm{display:flex;align-items:flex-end;gap:6px;height:110px;margin-top:6px}
+.harm div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;font:600 11px var(--mono);color:var(--muted);height:100%}
+.harm i{display:block;width:100%;max-width:34px;background:var(--off);border-radius:3px 3px 0 0;transition:height .2s}
+#btnPlay{min-width:118px}
+#biasPill{min-width:11em;text-align:center}
+<!--#BODY-->
+  <section class="panel" aria-labelledby="h-gloss">
+    <h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+    <details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+  </section>
+
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-circ">
+      <h2 id="h-circ"><span class="step">1</span>推挽輸出級與電流 <span class="en">Push-pull stage and currents</span></h2>
+      <div class="opts">
+        <span class="lab">偏壓 Bias</span>
+        <div class="seg wrap-ok" id="segBias" role="group" aria-label="Bias preset">
+          <button type="button" data-v="none">無偏壓</button><button type="button" data-v="under">不足</button><button type="button" data-v="opt">最佳</button><button type="button" data-v="over">過大</button><button type="button" data-v="a">Class-A</button>
+        </div>
+      </div>
+      <div class="opts">
+        <button type="button" class="primary" id="btnPlay">▶ 播放 Play</button>
+        <span class="phase-pill idle" id="biasPill">—</span>
+      </div>
+      <svg class="circ-svg" id="svgCirc" viewBox="0 0 460 400" role="img" aria-label="Complementary emitter follower with animated currents"></svg>
+      <div class="scrub"><span>時間 Time</span><input type="range" id="scrub" min="0" max="999" value="200" aria-label="Time cursor"></div>
+      <div class="params" id="params" style="margin-top:12px"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-gain">
+      <h2 id="h-gain"><span class="step">2</span>增益起伏與失真波形 <span class="en">Gain wobble and the error waveform</span></h2>
+      <div class="bigres" id="bigres"></div>
+      <div class="scroll-x"><svg class="wf-svg" id="svgGain" viewBox="0 0 560 250" role="img" aria-label="Incremental gain versus output voltage"></svg></div>
+      <div class="scroll-x" style="margin-top:6px"><svg class="wf-svg" id="svgWave" viewBox="0 0 560 300" role="img" aria-label="Output and error waveforms"></svg></div>
+      <div class="legend" id="legWave"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-thd">
+    <h2 id="h-thd"><span class="step">3</span>諧波與失真對輸出功率 <span class="en">Harmonics and THD versus output power (open loop, output stage only)</span></h2>
+    <div class="grid-2">
+      <div>
+        <h3 style="margin:0 0 4px;font-size:14px">目前條件的諧波 <span class="en" style="display:inline">Harmonics, dB below the fundamental</span></h3>
+        <div class="harm" id="harm"></div>
+        <p class="lede" style="margin-top:10px;font-size:14px">推挽結構上下對稱，偶次諧波互相抵消，剩下的主要是 3、5、7 次等奇次諧波；交越失真是一種「尖角」，所以高次諧波拖得很長，比同樣 THD 的平滑失真更容易聽出來。
+          <span class="en">A symmetric push-pull stage cancels even harmonics; crossover is a sharp kink, so its odd harmonics extend far up.</span></p>
+      </div>
+      <div class="scroll-x"><svg class="wf-svg" id="svgThd" viewBox="0 0 560 300" role="img" aria-label="THD versus output power for five bias settings"></svg></div>
+    </div>
+    <div class="legend" id="legThd"></div>
+  </section>
+
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-pow">
+      <h2 id="h-pow"><span class="step">4</span>功率與發熱 <span class="en">Power and heat at this setting</span></h2>
+      <div class="formulas" id="formPow"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-a">
+      <h2 id="h-a"><span class="step">5</span>單端 vs 推挽 Class-A <span class="en">Single-ended vs push-pull class A</span></h2>
+      <div class="scroll-x"><table class="tbl" style="min-width:520px" id="tblA"></table></div>
+      <p class="lede" style="margin-top:10px;font-size:14px">要輸出同樣的峰值電流 I<sub>pk</sub>，單端 Class-A 的靜態電流必須等於 I<sub>pk</sub>，推挽 Class-A 只要 I<sub>pk</sub>／2，兩管輪流把電流加減給負載。表中數值依左邊目前的 R<sub>L</sub>、電源與輸出峰值計算。
+        <span class="en">Single-ended class A must idle at the full peak current; push-pull class A needs only half.</span></p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-notes">
+    <h2 id="h-notes"><span class="step">6</span>設計重點 <span class="en">Design notes</span></h2>
+    <div class="note-key"><span><span class="src pdf">原稿</span> 附件原稿內容</span><span><span class="src txt">教科書</span> 標準電路理論、經典文獻</span><span><span class="src add">補充</span> Claude 補充、經驗值</span></div>
+    <div class="ngroups">
+      <div class="ngroup" style="--c:var(--accent)">
+        <h3>最佳偏壓 <span class="en">Optimal bias</span></h3>
+        <ul>
+          <li><b>I<sub>Q</sub>·R<sub>e</sub> ≈ V<sub>T</sub></b><span class="src txt">教科書</span><br>大電流時只有一顆管子導通，輸出電阻約 R<sub>e</sub>；0 V 附近兩顆並聯，輸出電阻是 (r<sub>e</sub> + R<sub>e</sub>)／2，其中 r<sub>e</sub> = V<sub>T</sub>／I<sub>Q</sub>。讓兩者相等就得到 r<sub>e</sub> = R<sub>e</sub>，也就是每顆射極電阻上約 26 mV。這個條件最早由 HP 的 Barney Oliver 提出，Douglas Self 在《Audio Power Amplifier Design》中加以推廣。<span class="en">Matching the two-device and one-device output resistance gives Iq·Re ≈ VT ≈ 26 mV (Oliver; popularised by Self).</span></li>
+          <li><b>例：R<sub>e</sub> = 0.22 Ω</b><span class="src txt">教科書</span><br>I<sub>Q</sub> ≈ 26 mV／0.22 Ω ≈ 118 mA。這是射極跟隨器（EF）在理想模型下的值；R<sub>e</sub> 很小時，管子內部的寄生射極電阻不能忽略，實際最佳點會比 26 mV 再低一些。<span class="en">With 0.22 Ω, about 118 mA; with very small Re the internal emitter resistance lowers the optimum.</span></li>
+          <li><b>偏壓不足 vs 過大</b><span class="src txt">教科書</span><br>不足時中間的增益掉下去（交越凹陷），過大時中間的增益凸起（gm doubling：兩管跨導相加）。上方增益圖的起伏越平，失真越低；兩種偏離都會讓失真上升，只是諧波分布不同。<span class="en">Under-bias gives a gain dip, over-bias a gain bump; the flatter the curve, the lower the distortion.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--on)">
+        <h3>為什麼不乾脆用 Class-A <span class="en">Why not just class A</span></h3>
+        <ul>
+          <li><b>靜態發熱</b><span class="src pdf">原稿</span><br>Class-A 無論有沒有訊號都消耗 2·V<sub>CC</sub>·I<sub>Q</sub>。以 ±35 V、8 Ω、10 V 峰值為例，推挽 Class-A 靜態至少要約 44 W 散熱（I<sub>Q</sub> = I<sub>pk</sub>／2 = 0.625 A），最佳偏壓的 AB 類只約 8 W。<span class="en">Class A burns 2·VCC·IQ all the time.</span></li>
+          <li><b>大音量時 AB 會離開 A 區</b><span class="src txt">教科書</span><br>當負載電流超過 2·I<sub>Q</sub>，其中一顆管子就關掉，從 A 類轉成 B 類工作。偏壓過大的 AB 類在這個轉換點附近會出現 gm doubling 的增益跳動，可在下方 THD 曲線中看到中等功率的突起。<span class="en">Above 2·IQ of load current one device cuts off; over-biased AB shows a bump at that transition.</span></li>
+          <li><b>負回授能壓多少</b><span class="src add">補充</span><br>本頁是輸出級本身的開迴路失真。完整放大器會用整體負回授（NFB）把失真壓低回授量的倍數（例如 30 dB 回授約壓低 30 倍），但交越失真的高次諧波落在回授量較小的高頻，所以輸出級本身的設計仍然重要。<span class="en">Global feedback reduces it, but high-order crossover products fall where loop gain is lower.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--ok)">
+        <h3>實務與手機 <span class="en">In practice and in phones</span></h3>
+        <ul>
+          <li><b>偏壓會隨溫度漂移</b><span class="src pdf">原稿</span><br>V<sub>be</sub> 約 −2 mV/°C；偏壓電壓不變時，管子變熱後 I<sub>Q</sub> 增加、再更熱，形成熱奔潰的正回饋。V<sub>be</sub> 倍增器要和功率管熱耦合來追蹤溫度——這是 03 熱設計頁（規劃中）的主題。<span class="en">Bias drifts with temperature; the Vbe multiplier must track the output devices (page 03, planned).</span></li>
+          <li><b>MOSFET 輸出級沒有明確的最佳點</b><span class="src add">補充</span><br>MOSFET 在偏壓區接近平方律，跨導隨電流慢慢增加，不會像 BJT 那樣在 26 mV 出現一個清楚的最佳值；橫向 MOSFET 輸出級通常偏壓較大電流。互補回授對（CFP）的最佳偏壓也和射極跟隨器不同。<span class="en">MOSFETs and CFP stages have different optima than the BJT emitter follower.</span></li>
+          <li><b>手機裡的 AB 類</b><span class="src add">補充</span><br>手機喇叭用 Class-D，但有線耳機輸出（或 USB-C 耳機轉接器裡的 DAC）多是 CMOS Class-AB 或 Class-G 耳機放大器：耳機只需要毫瓦級功率、對底噪與失真很敏感，常用電荷泵產生正負電源，讓輸出以 0 V 為中心、不需要隔直電容。<span class="en">Headphone outputs use CMOS class-AB or class-G with charge-pump rails.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+<!--#FOOTER-->
+模型：理想互補 BJT 射極跟隨器，I<sub>C</sub> = I<sub>S</sub>·exp(V<sub>be</sub>／V<sub>T</sub>)、V<sub>T</sub> = 26 mV，忽略基極電流、管子內部寄生電阻、飽和壓降與溫度變化，偏壓電壓固定；THD 為輸出級開迴路值，不含整體負回授。最佳偏壓 I<sub>Q</sub>·R<sub>e</sub> ≈ V<sub>T</sub> 依 B. Oliver（HP）與 D. Self《Audio Power Amplifier Design》的說法，經網路資料交叉確認。頁面為教學模型，實際設計請以元件規格與量測為準。
+<br>Ideal complementary BJT emitter follower (exponential law, VT = 26 mV, no base current, no internal resistances, fixed bias). THD is open-loop for the output stage only. Optimal-bias rule per B. Oliver and D. Self.
+<!--#SCRIPT-->
+glossary($('gloss'), ['BJT','EF','V<sub>be</sub>','V<sub>T</sub>','g<sub>m</sub>','I<sub>Q</sub>','R<sub>e</sub>','V<sub>q</sub>','THD+N','NFB','CFP','MOSFET','Class-G','dB']);
+const VT = 0.026, TAU = 2 * Math.PI;
+const P = {lq: Math.log10(118), Re: 0.22, RL: 8, Vcc: 35, lvp: 1, ph: 0.2, mode: 'opt'};
+const Iq = () => Math.pow(10, P.lq) / 1000;
+const Vp = () => Math.min(Math.pow(10, P.lvp), P.Vcc - 3);
+const BIAS = {
+  none: {zh: '無偏壓：0 V 附近死區', cls: 'off', iq: () => 1e-12},
+  under: {zh: '偏壓不足：交越凹陷', cls: 'off', iq: () => 0.25 * VT / P.Re},
+  opt: {zh: '最佳偏壓 Vq ≈ 26 mV', cls: 'on', iq: () => VT / P.Re},
+  over: {zh: '偏壓過大：gm doubling', cls: 'off', iq: () => 5 * VT / P.Re},
+  a: {zh: 'Class-A：兩管全程導通', cls: 'on', iq: () => 0.6 * Vp() / P.RL}
+};
+const ORDER = ['none', 'under', 'opt', 'over', 'a'];
+const COL = {none: 'var(--warn)', under: 'var(--on)', opt: 'var(--ok)', over: 'var(--off)', a: 'var(--accent)'};
+const NAME = {none: '無偏壓', under: '不足 0.25×', opt: '最佳 26 mV', over: '過大 5×', a: 'Class-A'};
+
+/* ---- the output-stage model ---- */
+/* solve for the smaller of the two device currents (precise even when it is ~1e-24 A);
+   constraint: VT·ln(I1·I2／IQ²) + (I1 + I2 − 2·IQ)·Re = 0 with |I1 − I2| = |I_L| */
+function solveSmall(aL, iq, Re){
+  let lo = -40, hi = 2;
+  for (let k = 0; k < 90; k++){
+    const m = (lo + hi) / 2, sm = Math.pow(10, m), bg = sm + aL;
+    const f = VT * Math.log(sm * bg / (iq * iq)) + (sm + bg - 2 * iq) * Re;
+    if (f > 0) hi = m; else lo = m;
+  }
+  return Math.pow(10, (lo + hi) / 2);
+}
+/* transfer table: sweep Vout (dense near 0), get the drive Vin and both device currents */
+function table(iq, Vm){
+  const N = 1601, k = 6, T = {vin: [], vout: [], i1: [], i2: []};
+  for (let j = 0; j < N; j++){
+    const u = -1 + 2 * j / (N - 1), vo = Vm * Math.sinh(k * u) / Math.sinh(k), IL = vo / P.RL;
+    const sm = solveSmall(Math.abs(IL), iq, P.Re), bg = sm + Math.abs(IL);
+    const I1 = IL >= 0 ? bg : sm, I2 = IL >= 0 ? sm : bg;
+    T.vout.push(vo); T.i1.push(I1); T.i2.push(I2);
+    // use the conducting (larger-current) device for the drive voltage
+    T.vin.push(IL >= 0 ? vo + VT * Math.log(I1 / iq) + (I1 - iq) * P.Re : vo - VT * Math.log(I2 / iq) - (I2 - iq) * P.Re);
+  }
+  return T;
+}
+function interp(xs, ys, x){
+  let lo = 0, hi = xs.length - 1;
+  if (x <= xs[0]) return ys[0]; if (x >= xs[hi]) return ys[hi];
+  while (hi - lo > 1){ const m = (lo + hi) >> 1; (xs[m] > x ? hi = m : lo = m); }
+  const t = (x - xs[lo]) / (xs[hi] - xs[lo]);
+  return ys[lo] + t * (ys[hi] - ys[lo]);
+}
+/* one period at output peak vp: samples + harmonics */
+function run(T, vp, N = 256){
+  const A = interp(T.vout, T.vin, vp) , vin0 = interp(T.vout, T.vin, 0);
+  const amp = A - vin0, S = [];
+  for (let n = 0; n < N; n++){
+    const x = n / N, vi = vin0 + amp * Math.sin(TAU * x);
+    S.push({x, vi, vo: interp(T.vin, T.vout, vi), i1: interp(T.vin, T.i1, vi), i2: interp(T.vin, T.i2, vi)});
+  }
+  const H = [];
+  for (let h = 1; h <= 11; h++){
+    let re = 0, im = 0; S.forEach(s => { re += s.vo * Math.cos(TAU * h * s.x); im += s.vo * Math.sin(TAU * h * s.x); });
+    H.push(2 * Math.hypot(re, im) / N);
+  }
+  const thd = Math.sqrt(H.slice(1).reduce((s, v) => s + v * v, 0)) / H[0];
+  return {S, H, thd, amp, vin0};
+}
+
+let T, R;
+function compute(){
+  T = table(Iq(), Math.max(Vp() * 1.08, 0.5));
+  R = run(T, Vp());
+}
+
+/* ---- sliders ---- */
+const sync = sliders([
+  {k: 'lq', zh: '靜態電流 I<sub>Q</sub>', en: 'Quiescent current (log)', min: -3, max: 3.6, step: 0.01, fmt: v => { const i = Math.pow(10, v) / 1000; return eng(i, 'A') + ' · V_q ' + eng(i * P.Re, 'V'); }},
+  {k: 'lvp', zh: '輸出峰值電壓', en: 'Output peak (log)', min: -1.3, max: 1.75, step: 0.01, fmt: v => eng(Vp(), 'V') + ' · ' + eng(Vp() * Vp() / (2 * P.RL), 'W')},
+  {k: 'Re', zh: '射極電阻 R<sub>e</sub>', en: 'Emitter resistor', min: 0.05, max: 0.47, step: 0.01, fmt: v => fx(v, 2) + ' Ω'},
+  {k: 'RL', zh: '喇叭 R<sub>L</sub>', en: 'Load', min: 2, max: 16, step: 0.5, fmt: v => v + ' Ω'},
+  {k: 'Vcc', zh: '電源 ±V<sub>CC</sub>', en: 'Supply rails', min: 10, max: 60, step: 1, fmt: v => '±' + v + ' V'}
+], P, $('params'), k => {
+  if (k === 'lq') { P.mode = 'custom'; setSeg('segBias', ''); }
+  else if (P.mode !== 'custom') P.lq = Math.log10(BIAS[P.mode].iq() * 1000);
+  sync(); redraw();
+});
+segGroup('segBias', v => { P.mode = v; P.lq = Math.log10(BIAS[v].iq() * 1000); sync(); redraw(); });
+setSeg('segBias', 'opt');
+
+/* ---- circuit: built once, updated in place ---- */
+const CK = {};
+(function buildCircuit(){
+  const svg = $('svgCirc');
+  CK.qPath = svgEl('path', {d: 'M300 30 V380', class: 'flow', stroke: 'var(--teal)'}, svg);
+  CK.p1 = svgEl('path', {d: 'M300 30 V210 H400 V330', class: 'flow', stroke: 'var(--on)'}, svg);
+  CK.p2 = svgEl('path', {d: 'M400 330 V210 H300 V380', class: 'flow', stroke: 'var(--off)'}, svg);
+  svgEl('path', {d: 'M240 30 H360 M240 380 H360 M300 30 V86 M300 134 V150 M300 190 V230 M300 270 V286 M300 334 V380 M300 210 H400 V250 M400 290 V330 M384 330 H416 M390 336 H410 M396 342 H404', class: 'wire'}, svg);
+  // BJTs
+  [[110, 'Q1 NPN', 1], [310, 'Q2 PNP', -1]].forEach(([y, n, s]) => {
+    svgEl('path', {d: `M282 ${y - 20} V${y + 20}`, class: 'plate'}, svg);
+    svgEl('path', {d: `M282 ${y - 8} L300 ${y - 24} M282 ${y + 8} L300 ${y + 24} M210 ${y} H282`, class: 'wire'}, svg);
+    if (s > 0) svgEl('path', {d: `M292 ${y + 15} L300 ${y + 24} L288 ${y + 22} Z`, class: 'solid'}, svg);
+    else svgEl('path', {d: `M291 ${y - 15} L282 ${y - 8} L294 ${y - 7} Z`, class: 'solid'}, svg);
+    svgEl('text', {x: 312, y: y + 4, class: 'lbl'}, svg, n);
+  });
+  // emitter resistors and load
+  [[150, 'R_e'], [230, 'R_e']].forEach(([y, l]) => { svgEl('rect', {x: 292, y, width: 16, height: 40, class: 'term'}, svg); svgEl('text', {x: 266, y: y + 25, class: 'lbl-sm'}, svg, l); });
+  svgEl('rect', {x: 390, y: 250, width: 20, height: 40, class: 'term'}, svg);
+  svgEl('text', {x: 418, y: 275, class: 'lbl-sm'}, svg, 'R_L');
+  svgEl('circle', {cx: 300, cy: 210, r: 4, class: 'node'}, svg);
+  svgEl('text', {x: 340, y: 204, class: 'read'}, svg, 'OUT');
+  svgEl('text', {x: 236, y: 26, class: 'lbl'}, svg, '+V_CC');
+  svgEl('text', {x: 236, y: 395, class: 'lbl'}, svg, '−V_CC');
+  // bias generator
+  svgEl('path', {d: 'M210 110 V180 M210 240 V310 M60 210 H150 M150 210 H210', class: 'wire'}, svg);
+  svgEl('rect', {x: 180, y: 180, width: 60, height: 60, rx: 6, class: 'term'}, svg);
+  svgEl('text', {x: 210, y: 206, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, '偏壓');
+  svgEl('text', {x: 210, y: 222, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, '2·V_bias');
+  svgEl('circle', {cx: 60, cy: 210, r: 16, class: 'term'}, svg);
+  svgEl('path', {d: 'M50 210 q5 -10 10 0 t10 0', class: 'wire'}, svg);
+  svgEl('text', {x: 60, y: 244, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, '驅動 V_in');
+  CK.t1 = svgEl('text', {x: 20, y: 60, class: 'read'}, svg, '');
+  CK.t2 = svgEl('text', {x: 20, y: 80, class: 'read'}, svg, '');
+  CK.tl = svgEl('text', {x: 20, y: 300, class: 'read'}, svg, '');
+  CK.tv = svgEl('text', {x: 20, y: 320, class: 'read'}, svg, '');
+})();
+function updateCircuit(){
+  const s = R.S[Math.floor(P.ph * R.S.length) % R.S.length];
+  const iMax = Vp() / P.RL + Iq();
+  const w = i => Math.max(0.5, 9 * Math.sqrt(Math.max(i, 0) / iMax));
+  const qi = Math.min(s.i1, s.i2), il = s.i1 - s.i2;
+  CK.qPath.setAttribute('stroke-width', w(qi)); CK.qPath.style.opacity = qi / iMax < 0.003 ? 0 : 0.9;
+  CK.p1.setAttribute('stroke-width', w(il)); CK.p1.style.opacity = il > 1e-4 ? 0.95 : 0;
+  CK.p2.setAttribute('stroke-width', w(-il)); CK.p2.style.opacity = il < -1e-4 ? 0.95 : 0;
+  CK.t1.textContent = 'I_Q1 = ' + eng(s.i1, 'A', 3);
+  CK.t2.textContent = 'I_Q2 = ' + eng(s.i2, 'A', 3);
+  CK.tl.textContent = 'I_L  = ' + eng(il, 'A', 3);
+  CK.tv.textContent = 'V_out = ' + eng(s.vo, 'V', 3);
+  if (WC) { const x = WC.X(P.ph); WC.cur.setAttribute('x1', x); WC.cur.setAttribute('x2', x); }
+}
+
+/* ---- charts ---- */
+let WC = null;
+function drawGain(){
+  const svg = $('svgGain'); clear(svg);
+  const xm = Math.max(Vp() * 1.05, 0.2), pts = [];
+  for (let j = 1; j < T.vout.length; j++){
+    const vo = (T.vout[j] + T.vout[j - 1]) / 2;
+    if (Math.abs(vo) <= xm) pts.push([vo, (T.vout[j] - T.vout[j - 1]) / (T.vin[j] - T.vin[j - 1])]);
+  }
+  let gmin = Math.min(...pts.map(p => p[1])), gmax = Math.max(...pts.map(p => p[1]));
+  const ideal = P.RL / (P.RL + P.Re);
+  gmin = Math.min(gmin, ideal); gmax = Math.max(gmax, ideal, 1);
+  const span = Math.max(gmax - gmin, 0.02), y0 = gmin - span * 0.08, y1 = gmax + span * 0.08;
+  const yt = [y0 + (y1 - y0) * 0.1, (y0 + y1) / 2, y1 - (y1 - y0) * 0.1].map(v => +v.toFixed(3));
+  const ch = chart(svg, {x0: 58, y0: 22, w: 470, h: 190, xr: [-xm, xm], yr: [y0, y1], xticks: [-xm, -xm / 2, 0, xm / 2, xm].map(v => +v.toPrecision(2)), xfmt: v => v + ' V',
+    yticks: yt, yfmt: v => v.toFixed(3), ylabel: '小訊號增益 dV_out／dV_in（越平越好）', xlabel: '輸出電壓 V_out'});
+  ch.line([[-xm, ideal], [xm, ideal]], {stroke: 'var(--muted)', 'stroke-dasharray': '5 4', 'stroke-width': 1.4});
+  svgEl('text', {x: 524, y: ch.Y(ideal) - 5, 'text-anchor': 'end', class: 'ref-lbl', fill: 'var(--muted)'}, ch.plot, '單管導通 R_L／(R_L + R_e) = ' + ideal.toFixed(3));
+  ch.line(pts, {stroke: COL[P.mode] || 'var(--accent)', 'stroke-width': 2.6});
+  const ix = 2 * Iq() * P.RL;
+  if (ix < xm && P.mode !== 'none') [-ix, ix].forEach(v => { svgEl('line', {x1: ch.X(v), x2: ch.X(v), y1: 22, y2: 212, stroke: 'var(--teal)', 'stroke-dasharray': '3 4'}, ch.plot); });
+  if (ix < xm && P.mode !== 'none') svgEl('text', {x: ch.X(ix) + 4, y: 36, class: 'ref-lbl', fill: 'var(--teal)'}, ch.plot, '|I_L| = 2·I_Q：離開 A 區');
+}
+function drawWave(){
+  const svg = $('svgWave'); clear(svg);
+  const g1 = R.H[0] / R.amp, vp = Vp();
+  const W = chart(svg, {x0: 58, y0: 22, w: 484, h: 120, xr: [0, 1], yr: [-vp * 1.15, vp * 1.15], yticks: [-vp, 0, vp].map(v => +v.toPrecision(2)), yfmt: v => v + ' V', ylabel: '輸出 V_out'});
+  W.line(R.S.map(s => [s.x, (s.vi - R.vin0) * g1]), {stroke: 'var(--muted)', 'stroke-dasharray': '5 4', 'stroke-width': 1.4});
+  W.line(R.S.map(s => [s.x, s.vo]), {stroke: 'var(--accent)', 'stroke-width': 2.6});
+  const err = R.S.map(s => s.vo - (s.vi - R.vin0) * g1);
+  const em = Math.max(...err.map(Math.abs), 1e-6) * 1.15;
+  const E = chart(svg, {x0: 58, y0: 168, w: 484, h: 100, xr: [0, 1], yr: [-em, em], xticks: [0, 0.25, 0.5, 0.75, 1], xfmt: v => (v * 360) + '°',
+    yticks: [-em / 1.15, 0, em / 1.15].map(v => +v.toPrecision(2)), yfmt: v => eng(v, 'V', 2), ylabel: '誤差 = 實際 − 理想（放大顯示） Error, magnified'});
+  E.line(R.S.map((s, i) => [s.x, err[i]]), {stroke: 'var(--warn)', 'stroke-width': 2});
+  WC = {X: W.X, cur: svgEl('line', {x1: W.X(P.ph), x2: W.X(P.ph), y1: 18, y2: 270, stroke: 'var(--ink)', 'stroke-width': 1, opacity: .5}, svg)};
+  $('legWave').innerHTML = [['var(--accent)', '實際輸出 Actual output', 'solid'], ['var(--muted)', '理想（同基波增益）Ideal', 'dashed'], ['var(--warn)', '誤差波形 Error', 'solid']]
+    .map(([c, t, s]) => `<span><i style="border-top-style:${s};color:${c};border-color:${c}"></i>${t}</span>`).join('');
+}
+function drawHarm(){
+  const H = R.H, ref = H[0];
+  const rows = [3, 5, 7, 9, 11, 2].map(n => [n, H[n - 1] / ref]);
+  rows.sort((a, b) => a[0] - b[0]);
+  $('harm').innerHTML = rows.map(([n, r]) => { const d = 20 * Math.log10(Math.max(r, 1e-9)); const hgt = Math.max(1, (d + 140) / 140 * 80); return `<div><span>${d < -139 ? '&lt;−140' : fx(d, 0)}</span><i style="height:${Math.max(1, hgt)}px"></i><span>H${n}</span></div>`; }).join('');
+}
+function thdCurve(iq){
+  const Vmax = Math.max(P.Vcc - 3, 1), Tt = table(iq, Vmax * 1.02), out = [];
+  for (let k = 0; k <= 26; k++){
+    const vp = 0.05 * Math.pow(Vmax / 0.05, k / 26);
+    out.push([vp * vp / (2 * P.RL), Math.max(run(Tt, vp, 128).thd * 100, 1e-5)]);
+  }
+  return out;
+}
+function drawThd(){
+  const svg = $('svgThd'); clear(svg);
+  const Vmax = Math.max(P.Vcc - 3, 1), pmin = 0.05 * 0.05 / (2 * P.RL), pmax = Vmax * Vmax / (2 * P.RL);
+  const ticks = []; for (let e = Math.ceil(Math.log10(pmin)); e <= Math.floor(Math.log10(pmax)); e++) ticks.push(Math.pow(10, e));
+  const lg = v => Math.log10(v);
+  const ch = chart(svg, {x0: 58, y0: 22, w: 484, h: 236, xlog: true, xr: [pmin, pmax], yr: [-4, 2], xticks: ticks, xfmt: v => eng(v, 'W', 1),
+    yticks: [-4, -3, -2, -1, 0, 1, 2], yfmt: v => String(parseFloat(Math.pow(10, v).toPrecision(1))) + '%', ylabel: 'THD（對數，輸出級開迴路）', xlabel: '輸出功率 P_out'});
+  const keys = ORDER.slice();
+  keys.forEach(k => {
+    const iq = BIAS[k].iq();
+    const pts = thdCurve(k === 'a' ? 0.6 * Vmax / P.RL : iq).map(([p, t]) => [p, lg(t)]);
+    ch.line(pts, {stroke: COL[k], 'stroke-width': k === P.mode ? 3.2 : 1.6, opacity: k === P.mode ? 1 : 0.55});
+  });
+  if (P.mode === 'custom') ch.line(thdCurve(Iq()).map(([p, t]) => [p, lg(t)]), {stroke: 'var(--ink)', 'stroke-width': 3});
+  const pc = Vp() * Vp() / (2 * P.RL);
+  svgEl('circle', {cx: ch.X(pc), cy: ch.Y(lg(Math.max(R.thd * 100, 1e-5))), r: 6, fill: 'var(--ink)'}, ch.plot);
+  $('legThd').innerHTML = ORDER.map(k => `<span><i style="border-top-style:solid;color:${COL[k]};border-color:${COL[k]}"></i>${NAME[k]}</span>`).join('') +
+    (P.mode === 'custom' ? '<span><i style="border-top-style:solid;color:var(--ink);border-color:var(--ink)"></i>自訂 I_Q</span>' : '') +
+    '<span>● 目前的輸出 Current point</span><span>Class-A 曲線以最大輸出所需的 I<sub>Q</sub> 計算</span>';
+}
+function drawPower(){
+  const N = R.S.length, i1 = R.S.reduce((s, x) => s + x.i1, 0) / N, i2 = R.S.reduce((s, x) => s + x.i2, 0) / N;
+  const po = R.S.reduce((s, x) => s + x.vo * x.vo, 0) / N / P.RL, pin = P.Vcc * (i1 + i2), pd = pin - po;
+  const pq = 2 * P.Vcc * Iq();
+  const vp = Vp();
+  $('bigres').innerHTML = `<div><span>THD（開迴路）</span><b>${R.thd < 1e-6 ? '&lt; 0.0001%' : (R.thd * 100).toPrecision(2) + '%'}</b></div>
+    <div><span>I<sub>Q</sub> · V<sub>q</sub></span><b>${eng(Iq(), 'A')}</b></div>
+    <div><span>每顆 R<sub>e</sub> 壓降</span><b>${eng(Iq() * P.Re, 'V')}</b></div>
+    <div><span>效率</span><b>${fx(po / pin * 100, 1)}%</b></div>`;
+  const pill = $('biasPill'), b = BIAS[P.mode];
+  pill.className = 'phase-pill ' + (b ? b.cls : 'idle'); pill.textContent = b ? b.zh : '自訂偏壓 Custom';
+  $('formPow').innerHTML = [
+    ['輸出功率 Output', `P<sub>out</sub> = V<sub>p</sub>²／(2·R<sub>L</sub>) = ${eng(vp, 'V')}²／(2 × ${P.RL})`, eng(po, 'W')],
+    ['電源功率 Supply', `P<sub>in</sub> = V<sub>CC</sub>·(Ī<sub>Q1</sub> + Ī<sub>Q2</sub>) = ${P.Vcc} × (${eng(i1, 'A')} + ${eng(i2, 'A')})`, eng(pin, 'W')],
+    ['輸出級發熱 Dissipation', `P<sub>D</sub> = P<sub>in</sub> − P<sub>out</sub>（兩管＋R<sub>e</sub> 合計）`, eng(pd, 'W')],
+    ['靜態發熱 Idle', `P<sub>Q</sub> = 2·V<sub>CC</sub>·I<sub>Q</sub> = 2 × ${P.Vcc} × ${eng(Iq(), 'A')}`, eng(pq, 'W')],
+    ['最佳偏壓 Optimum', `I<sub>Q,opt</sub> = V<sub>T</sub>／R<sub>e</sub> = 26 mV／${fx(P.Re, 2)} Ω`, eng(VT / P.Re, 'A')],
+    ['A 區邊界 Class-A limit', `負載電流超過 2·I<sub>Q</sub> = ${eng(2 * Iq(), 'A')}（V<sub>out</sub> ≈ ${eng(2 * Iq() * P.RL, 'V')}）後只剩一顆導通`, eng(2 * Iq() * P.RL, 'V')]
+  ].map(([n, e, r]) => `<div class="f-row"><div class="name">${n}</div><div class="eq">${e}</div><div class="res">${r}</div></div>`).join('');
+  const ipk = vp / P.RL, poA = vp * vp / (2 * P.RL);
+  const rows = [
+    ['單端，電阻負載 SE, resistive', ipk, '集極電阻也流 I<sub>Q</sub>', 25],
+    ['單端，電感／變壓器 SE, choke', ipk, '直流不經負載', 50],
+    ['推挽 Class-A Push-pull', ipk / 2, '兩管輪流加減', 50]
+  ];
+  $('tblA').innerHTML = `<thead><tr><th>架構</th><th class="m">需要的 I<sub>Q</sub></th><th class="m">靜態功耗</th><th class="m">理論最高效率</th><th>說明</th></tr></thead><tbody>` +
+    rows.map(([n, iq, d, e]) => `<tr><td>${n}</td><td class="m">${eng(iq, 'A')}</td><td class="m">${eng(n.startsWith('推挽') ? 2 * P.Vcc * iq : P.Vcc * iq * (n.includes('電阻') ? 2 : 1), 'W')}</td><td class="m">${e}%</td><td>${d}</td></tr>`).join('') +
+    `<tr><td>參考：最佳偏壓 AB</td><td class="m">${eng(VT / P.Re, 'A')}</td><td class="m">${eng(2 * P.Vcc * VT / P.Re, 'W')}</td><td class="m">≈ 78.5%</td><td>目前輸出 ${eng(poA, 'W')}</td></tr></tbody>`;
+}
+function redraw(){ compute(); drawGain(); drawWave(); drawHarm(); drawThd(); drawPower(); updateCircuit(); }
+
+$('scrub').addEventListener('input', e => { P.ph = e.target.value / 1000; updateCircuit(); });
+let playing = false, last = 0;
+function tick(ts){
+  if (!playing) return;
+  if (last) P.ph = (P.ph + (ts - last) / 1000 * 0.25) % 1;
+  last = ts; $('scrub').value = Math.round(P.ph * 1000); updateCircuit(); requestAnimationFrame(tick);
+}
+$('btnPlay').addEventListener('click', () => {
+  playing = !playing; last = 0;
+  $('btnPlay').textContent = playing ? '❚❚ 暫停 Pause' : '▶ 播放 Play';
+  if (playing) requestAnimationFrame(tick);
+});
+redraw();

@@ -7,7 +7,7 @@ Power amplifiers · Class A, B, AB, C, D — from theory to the phone speaker
 <!--#CHIP-->
 CLASS <span>A→D</span>
 <!--#LEDE-->
-<p class="lede">功率放大器（PA）的分類，本質是在<b>線性度</b>與<b>效率</b>之間取捨：A、AB、B、C 類由導通角決定，電晶體工作在線性區；D 類把電晶體當開關，用 PWM 調變與輸出濾波器還原訊號。這個系列以<b>手機喇叭</b>為主軸——為什麼手機一定用 Class-D、為什麼可以不用 LC 濾波器、Smart PA 的升壓與喇叭保護在做什麼。第一階段先上線導通角、Class-D 原理與輸出濾波器三頁，線性輸出級、熱設計、PCB 佈線與射頻 PA 接著補上。
+<p class="lede">功率放大器（PA）的分類，本質是在<b>線性度</b>與<b>效率</b>之間取捨：A、AB、B、C 類由導通角決定，電晶體工作在線性區；D 類把電晶體當開關，用 PWM 調變與輸出濾波器還原訊號。這個系列以<b>手機喇叭</b>為主軸——為什麼手機一定用 Class-D、為什麼可以不用 LC 濾波器、Smart PA 的升壓與喇叭保護在做什麼。目前已上線導通角、線性輸出級、Class-D 原理與輸出濾波器四頁，熱設計、PCB 佈線與射頻 PA 接著補上。
   <span class="en">Amplifier classes trade linearity for efficiency. This series follows the phone speaker: why phones use Class-D, why they can skip the LC filter, and what a smart PA's boost and speaker protection do.</span></p>
 <!--#STYLE-->
 .flow-line{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700;font-size:14px}
@@ -38,12 +38,13 @@ CLASS <span>A→D</span>
       <ul><li>單管諧振負載 vs 推挽</li><li>手機電池直推、Smart PA、家用 100 W 三種情境</li></ul>
       <span class="go">開啟 Open →</span>
     </a>
-    <div class="card soon" style="--c:var(--teal)">
-      <span class="no">02 · LINEAR STAGE · 規劃中</span>
-      <h2>A／B／AB 輸出級<small>Push-pull · crossover · bias</small></h2>
-      <p>推挽電路電流動畫、偏壓與交越失真、轉移曲線與 FFT 諧波，單端與推挽 A 類比較。</p>
-      <span class="go">即將推出 Planned</span>
-    </div>
+    <a class="card" href="linear-stage.html" style="--c:var(--teal)">
+      <span class="no">02 · LINEAR STAGE</span>
+      <h2>A／B／AB 輸出級<small>Push-pull · crossover · gm doubling</small></h2>
+      <p>用 BJT 指數方程式即時計算推挽射極跟隨器：拖動<b>偏壓 I<sub>Q</sub></b>，看增益起伏、誤差波形、奇次諧波與 <b>THD 對輸出功率</b>曲線。</p>
+      <ul><li>最佳偏壓 I<sub>Q</sub>·R<sub>e</sub> ≈ 26 mV</li><li>單端 vs 推挽 Class-A</li></ul>
+      <span class="go">開啟 Open →</span>
+    </a>
     <div class="card soon" style="--c:var(--warn)">
       <span class="no">03 · THERMAL · 規劃中</span>
       <h2>熱設計與熱奔潰<small>V<sub>be</sub> multiplier · heatsink</small></h2>

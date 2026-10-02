@@ -13,11 +13,11 @@ OUT = SRC.parent
 SITE = OUT / "_site"
 SERIES = [  # (key, number, nav name, zh, single-file stem, site file)
     ("angle", "01", "CONDUCTION ANGLE", "導通角與效率", "01-ANGLE", "conduction-angle.html"),
+    ("linear", "02", "LINEAR STAGE", "A／B／AB 輸出級", "02-LINEAR", "linear-stage.html"),
     ("classd", "04", "CLASS-D", "開關放大原理", "04-CLASSD", "class-d.html"),
     ("filter", "05", "OUTPUT FILTER", "輸出濾波器設計", "05-FILTER", "output-filter.html"),
 ]
 SOON = [  # planned pages, shown greyed out in the nav
-    ("02", "LINEAR STAGE", "A／B／AB 輸出級"),
     ("03", "THERMAL", "熱設計與熱奔潰"),
     ("06", "LAYOUT · EMI", "PCB 佈線"),
     ("07", "RF PA", "射頻功率放大器"),

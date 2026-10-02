@@ -132,7 +132,15 @@ const GLOSS = {
 "I²S／TDM":["Inter-IC Sound / Time-Division Multiplexing", "數位音訊介面，手機 SoC 直接送數位音訊給 Smart PA"],
 "PVDD":["Power-Stage Supply Voltage", "Class-D 功率級的電源腳位"],
 "dB":["Decibel", "分貝：功率比 10·log，電壓比 20·log"],
-"SoC":["System on Chip", "系統單晶片，手機主處理器"]
+"SoC":["System on Chip", "系統單晶片，手機主處理器"],
+"V<sub>T</sub>":["Thermal Voltage", "熱電壓 kT/q，室溫約 26 mV，決定 BJT 電流隨 V<sub>be</sub> 指數變化的斜率"],
+"g<sub>m</sub>":["Transconductance", "跨導：電流隨輸入電壓的變化率；BJT 為 I<sub>C</sub>／V<sub>T</sub>"],
+"R<sub>e</sub>":["Emitter Resistor", "射極電阻：輸出管射極串聯的小電阻（常見 0.1–0.47 Ω），穩定偏壓並分流"],
+"V<sub>q</sub>":["Quiescent Voltage across R<sub>e</sub>", "靜態時每顆射極電阻上的壓降 I<sub>Q</sub>·R<sub>e</sub>"],
+"EF":["Emitter Follower", "射極跟隨器：輸出取自射極，電壓增益約 1、電流增益大"],
+"CFP":["Complementary Feedback Pair (Sziklai)", "互補回授對：用一顆小訊號管＋一顆功率管組成的複合輸出管"],
+"NFB":["Negative Feedback", "負回授：把輸出拉回輸入比較，壓低失真"],
+"Class-G":["Class-G (Rail Switching)", "依訊號大小在兩組電源軌之間切換的線性放大器"]
 };
 function glossary(box, keys){
 box.innerHTML = '<div class="scroll-x"><table class="gloss"><thead><tr><th>縮寫</th><th>完整英文名稱</th><th>中文意思與說明</th></tr></thead><tbody>' +
