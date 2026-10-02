@@ -1,0 +1,140 @@
+const NS = 'http://www.w3.org/2000/svg';
+const $ = id => document.getElementById(id);
+const fx = (v, d = 2) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d);
+const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function svgEl(tag, attrs, parent, text){
+const e = document.createElementNS(NS, tag);
+for (const a in attrs) e.setAttribute(a, attrs[a]);
+if (text != null) e.textContent = text;
+if (parent) parent.appendChild(e);
+return e;
+}
+function segGroup(id, cb){
+const g = $(id);
+g.addEventListener('click', e => {
+const b = e.target.closest('button[data-v]'); if (!b) return;
+setSeg(id, b.dataset.v); cb(b.dataset.v);
+});
+}
+function setSeg(id, v){ $(id).querySelectorAll('button[data-v]').forEach(o => o.setAttribute('aria-pressed', o.dataset.v === String(v))); }
+function sliders(defs, P, box, onChange, pre = ''){
+defs.forEach(d => {
+const w = document.createElement('div'); w.className = 'param';
+w.innerHTML = `<div class="top"><label for="p_${pre}${d.k}">${d.zh}<span class="en">${d.en}</span></label><output id="o_${pre}${d.k}"></output></div>
+<input type="range" id="p_${pre}${d.k}" min="${d.min}" max="${d.max}" step="${d.step}">`;
+box.appendChild(w);
+$('p_' + pre + d.k).addEventListener('input', e => { P[d.k] = parseFloat(e.target.value); sync(); onChange(d.k); });
+});
+function sync(){ defs.forEach(d => { $('p_' + pre + d.k).value = P[d.k]; $('o_' + pre + d.k).textContent = d.fmt(P[d.k]); }); }
+sync();
+return sync;
+}
+/* engineering-notation formatter: eng(22.5e-6,'H') -> "22.5 µH" */
+function eng(v, unit = '', digits = 3){
+if (!isFinite(v)) return '—';
+if (v === 0) return '0 ' + unit;
+const pre = [[1e9,'G'],[1e6,'M'],[1e3,'k'],[1,''],[1e-3,'m'],[1e-6,'µ'],[1e-9,'n'],[1e-12,'p']];
+const a = Math.abs(v);
+for (const [m, p] of pre){
+if (a >= m * 0.9995){ return String(parseFloat((v / m).toPrecision(digits))) + ' ' + p + unit; }
+}
+return (v / 1e-12).toPrecision(digits) + ' p' + unit;
+}
+const dB = x => 20 * Math.log10(Math.max(x, 1e-12));
+/* nearest standard value: E6 for inductors, E12 for capacitors */
+const E6 = [1.0, 1.5, 2.2, 3.3, 4.7, 6.8];
+const E12 = [1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2];
+function nearestE(v, series = E12){
+const dec = Math.pow(10, Math.floor(Math.log10(v)));
+let best = v, err = Infinity;
+for (const k of [0.1, 1, 10]) for (const s of series){
+const c = s * dec * k, e = Math.abs(Math.log(c / v));
+if (e < err){ err = e; best = c; }
+}
+return best;
+}
+/* minimal complex arithmetic for frequency responses */
+const C = (re, im = 0) => ({re, im});
+const cadd = (a, b) => C(a.re + b.re, a.im + b.im);
+const cmul = (a, b) => C(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+const cdiv = (a, b) => { const d = b.re * b.re + b.im * b.im; return C((a.re * b.re + a.im * b.im) / d, (a.im * b.re - a.re * b.im) / d); };
+const cinv = a => cdiv(C(1), a);
+const cabs = a => Math.hypot(a.re, a.im);
+const par = (...zs) => cinv(zs.reduce((s, z) => cadd(s, cinv(z)), C(0)));   // parallel impedances
+/* small chart helper: draws axes, grid and ticks into an <svg>; returns scale functions */
+function chart(svg, o){
+const g = svgEl('g', {}, svg);
+const {x0, y0, w, h} = o;
+const lx = v => Math.log10(v);
+const X = o.xlog ? v => x0 + (lx(v) - lx(o.xr[0])) / (lx(o.xr[1]) - lx(o.xr[0])) * w
+: v => x0 + (v - o.xr[0]) / (o.xr[1] - o.xr[0]) * w;
+const Y = v => y0 + h - (Math.min(Math.max(v, o.yr[0]), o.yr[1]) - o.yr[0]) / (o.yr[1] - o.yr[0]) * h;
+svgEl('rect', {x: x0, y: y0, width: w, height: h, fill: 'var(--paper-2)', stroke: 'var(--line)'}, g);
+(o.xticks || []).forEach(t => {
+svgEl('line', {x1: X(t), x2: X(t), y1: y0, y2: y0 + h, class: 'axis', 'stroke-dasharray': '2 4'}, g);
+svgEl('text', {x: X(t), y: y0 + h + 15, 'text-anchor': 'middle', class: 'tick'}, g, o.xfmt ? o.xfmt(t) : t);
+});
+(o.yticks || []).forEach(t => {
+svgEl('line', {x1: x0, x2: x0 + w, y1: Y(t), y2: Y(t), class: 'axis', 'stroke-dasharray': '2 4'}, g);
+svgEl('text', {x: x0 - 6, y: Y(t) + 4, 'text-anchor': 'end', class: 'tick'}, g, o.yfmt ? o.yfmt(t) : t);
+});
+if (o.xlabel) svgEl('text', {x: x0 + w, y: y0 + h + 30, 'text-anchor': 'end', class: 'lbl-sm'}, g, o.xlabel);
+if (o.ylabel) svgEl('text', {x: x0, y: y0 - 8, class: 'lbl-sm'}, g, o.ylabel);
+const clipId = 'clip' + Math.random().toString(36).slice(2, 8);
+const cp = svgEl('clipPath', {id: clipId}, g);
+svgEl('rect', {x: x0, y: y0 - 2, width: w, height: h + 4}, cp);
+const plot = svgEl('g', {'clip-path': `url(#${clipId})`}, g);
+function line(pts, attrs){
+const d = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join('');
+return svgEl('path', Object.assign({d, fill: 'none', 'stroke-width': 2.4, 'stroke-linejoin': 'round'}, attrs), plot);
+}
+return {g, plot, X, Y, line};
+}
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+/* glossary of abbreviations: key -> [full English name, 中文說明] */
+const GLOSS = {
+"PA":["Power Amplifier", "功率放大器：把小訊號放大到足以推動負載（喇叭、天線）的功率"],
+"BJT":["Bipolar Junction Transistor", "雙極性接面電晶體（NPN／PNP）"],
+"MOSFET":["Metal-Oxide-Semiconductor Field-Effect Transistor", "金氧半場效電晶體，Class-D 的開關元件"],
+"V<sub>be</sub>":["Base-Emitter Voltage", "BJT 基極－射極電壓，約 0.6–0.7 V 才開始明顯導通，溫度每升 1 °C 約降 2 mV"],
+"I<sub>Q</sub>":["Quiescent Current", "靜態電流：沒有輸入訊號時流過輸出級的偏壓電流"],
+"θ":["Conduction Angle", "導通角：一個訊號週期（360°）中，電晶體有電流流過的角度"],
+"RF":["Radio Frequency", "射頻：無線通訊用的高頻訊號"],
+"THD+N":["Total Harmonic Distortion plus Noise", "總諧波失真加雜訊，音響最常用的失真指標"],
+"PWM":["Pulse-Width Modulation", "脈衝寬度調變：用脈衝的寬窄代表訊號大小"],
+"PDM":["Pulse-Density Modulation", "脈衝密度調變：用脈衝的疏密代表訊號大小，常見於數位麥克風"],
+"AD／BD":["AD (two-level) / BD (three-level) Modulation", "兩種 Class-D 調變法：AD 兩端互補切換；BD 兩端各自調變，無訊號時差動電壓幾乎為零"],
+"SE":["Single-Ended", "單端輸出：喇叭一端接放大器、一端接地"],
+"BTL":["Bridge-Tied Load", "橋接負載：喇叭兩端各接一個半橋，同樣電源下電壓擺幅加倍、功率約 4 倍"],
+"H-bridge":["H-Bridge (Full Bridge)", "全橋：Q1–Q4 四顆開關，BTL Class-D 的輸出級"],
+"LC":["Inductor-Capacitor Filter", "電感電容濾波器"],
+"LPF":["Low-Pass Filter", "低通濾波器"],
+"f<sub>sw</sub>":["Switching Frequency", "開關頻率：Class-D 的 PWM 載波頻率"],
+"f<sub>c</sub>":["Cut-off Frequency", "截止頻率：濾波器響應掉 3 dB（Butterworth）的頻率"],
+"Q":["Quality Factor", "品質因數：決定濾波器在截止頻率附近有沒有突起；Butterworth 為 0.707"],
+"R<sub>DS(on)</sub>":["Drain-Source On-Resistance", "MOSFET 導通電阻，決定 I²R 導通損耗"],
+"Re／Le":["Voice-Coil Resistance / Inductance", "喇叭音圈的直流電阻與電感，喇叭阻抗高頻上升的原因"],
+"Zobel":["Zobel Network", "串聯 RC 補償網路，並在喇叭上抵消音圈電感，讓負載看起來像電阻"],
+"FB":["Ferrite Bead", "鐵氧體磁珠：低頻像小電感、高頻像電阻，把高頻能量變成熱"],
+"I<sub>sat</sub>":["Saturation Current", "電感飽和電流：超過後電感量急降"],
+"ESR／ESL":["Equivalent Series Resistance / Inductance", "電容的等效串聯電阻／電感"],
+"C0G／X7R":["Class 1 / Class 2 Ceramic Dielectrics", "陶瓷電容材質：C0G 容量幾乎不隨電壓改變；X7R 容量會隨直流偏壓下降"],
+"EMI／EMC":["Electromagnetic Interference / Compatibility", "電磁干擾／電磁相容"],
+"FCC":["Federal Communications Commission", "美國聯邦通訊委員會，規範 30 MHz–1 GHz 輻射發射限值"],
+"CISPR":["Comité International Spécial des Perturbations Radioélectriques", "國際無線電干擾特別委員會，制定 CISPR 32（多媒體）、CISPR 25（車用）等 EMI 標準"],
+"SSM":["Spread-Spectrum Modulation", "展頻調變：讓開關頻率小幅抖動，把頻譜峰值打散"],
+"PSRR":["Power Supply Rejection Ratio", "電源抑制比：電源漣波傳到輸出的衰減量"],
+"DSP":["Digital Signal Processor", "數位訊號處理器"],
+"IV sense":["Current and Voltage Sense", "即時量測喇叭電流與電壓，用來估算音圈溫度與振膜位移"],
+"Smart PA":["Smart Power Amplifier", "內建 DSP 與 IV sense、可做喇叭保護的 Class-D 放大器，手機主流"],
+"Class-H":["Class-H (Rail Tracking)", "電源軌跟隨訊號包絡調整；手機 Smart PA 的升壓電壓隨音量動態變化"],
+"SPL":["Sound Pressure Level", "聲壓級（dB SPL）"],
+"I²S／TDM":["Inter-IC Sound / Time-Division Multiplexing", "數位音訊介面，手機 SoC 直接送數位音訊給 Smart PA"],
+"PVDD":["Power-Stage Supply Voltage", "Class-D 功率級的電源腳位"],
+"dB":["Decibel", "分貝：功率比 10·log，電壓比 20·log"],
+"SoC":["System on Chip", "系統單晶片，手機主處理器"]
+};
+function glossary(box, keys){
+box.innerHTML = '<div class="scroll-x"><table class="gloss"><thead><tr><th>縮寫</th><th>完整英文名稱</th><th>中文意思與說明</th></tr></thead><tbody>' +
+keys.map(k => `<tr><td>${k}</td><td>${GLOSS[k][0]}</td><td>${GLOSS[k][1]}</td></tr>`).join('') + '</tbody></table></div>';
+}

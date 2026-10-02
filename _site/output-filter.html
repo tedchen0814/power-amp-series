@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>輸出濾波器設計 · 功率放大器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/series.css">
+<style>
+.wf-svg{width:100%;height:auto;display:block;min-width:520px}
+.opts{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:12px}
+.opts .lab{font-weight:700;color:var(--muted);font-size:13.5px}
+.chkbox{display:inline-flex;gap:6px;align-items:center;font-size:13.5px;font-weight:600;cursor:pointer}
+.chkbox input{accent-color:var(--accent);width:16px;height:16px}
+.bigtabs{display:flex;gap:10px;flex-wrap:wrap}
+.bigtabs button{font-size:15px;padding:8px 16px;border-width:1.5px}
+.bigtabs button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="conduction-angle.html"><b>01 CONDUCTION ANGLE</b>導通角與效率</a><span class="soon" title="規劃中 Planned"><b>02 LINEAR STAGE</b>A／B／AB 輸出級</span><span class="soon" title="規劃中 Planned"><b>03 THERMAL</b>熱設計與熱奔潰</span><a href="class-d.html"><b>04 CLASS-D</b>開關放大原理</a><span class="cur" aria-current="page"><b>05 OUTPUT FILTER</b>輸出濾波器設計</span><span class="soon" title="規劃中 Planned"><b>06 LAYOUT · EMI</b>PCB 佈線</span><span class="soon" title="規劃中 Planned"><b>07 RF PA</b>射頻功率放大器</span><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a></nav>
+<header>
+<div>
+<div class="eyebrow">Power Amplifier Series · 05</div>
+<h1>輸出濾波器設計<small>Class-D output filter · LC reconstruction or ferrite-bead EMI filter</small></h1>
+</div>
+<div class="chip-dc">L·C <span>/</span> FB·C</div>
+<p class="lede">Class-D 輸出端的濾波器有兩種任務。<b>傳統 LC 重建濾波器</b>要把 PWM 載波擋在喇叭外面：通過 20 Hz–20 kHz，在開關頻率 f<sub>sw</sub> 處提供 20–40 dB 以上的衰減，還要顧及喇叭阻抗不是純電阻造成的諧振突起。<b>手機的 Filter-free 設計</b>則讓音圈自己濾漣波，輸出端只留 <b>Ferrite bead＋小電容</b>，目標是壓低 30 MHz–1 GHz 的輻射。上方切換兩種模式，輸入你的條件，元件值、頻率響應與檢查項目會即時更新。
+<span class="en">An LC reconstruction filter keeps the PWM carrier out of the speaker; a filter-free phone design keeps only a ferrite bead and a small capacitor to tame 30 MHz–1 GHz emissions.</span></p>
+</header>
+<section class="panel" aria-labelledby="h-gloss">
+<h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+<details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+</section>
+<section class="panel" aria-labelledby="h-mode">
+<h2 id="h-mode"><span class="step">0</span>選擇濾波器類型 <span class="en">Choose the filter type</span></h2>
+<div class="bigtabs" id="segType" role="group" aria-label="Filter type">
+<button type="button" data-v="lc">LC 重建濾波器 · 傳統 Class-D／車用／家用</button>
+<button type="button" data-v="fb">Ferrite bead＋C · 手機 Filter-free</button>
+</div>
+</section>
+<!-- ================= LC ================= -->
+<div id="paneLC">
+<div class="grid-2">
+<section class="panel" aria-labelledby="h-lcin">
+<h2 id="h-lcin"><span class="step">1</span>設計條件 <span class="en">Inputs</span></h2>
+<div class="opts">
+<span class="lab">架構 Topology</span>
+<div class="seg" id="segTopo" role="group" aria-label="Topology"><button type="button" data-v="btl">BTL 差動 C<sub>Δ</sub></button><button type="button" data-v="se">SE 單端</button></div>
+<span class="lab">負載模型 Load</span>
+<div class="seg" id="segLoad" role="group" aria-label="Load"><button type="button" data-v="r">純電阻 R</button><button type="button" data-v="spk">喇叭 Re＋Le</button><button type="button" data-v="open">開路 Open</button></div>
+</div>
+<div class="params" id="paramsLC"></div>
+<div class="opts" style="margin-top:12px">
+<label class="chkbox"><input type="checkbox" id="chkE"> 改用標準值（L 取 E6、C 取 E12） Use standard values</label>
+<label class="chkbox"><input type="checkbox" id="chkZ"> 加 Zobel 補償 Add Zobel (R<sub>z</sub> = Re, C<sub>z</sub> = Le／Re²)</label>
+</div>
+</section>
+<section class="panel" aria-labelledby="h-lcout">
+<h2 id="h-lcout"><span class="step">2</span>元件值與檢查 <span class="en">Component values and checks</span></h2>
+<div class="badges" id="badgesLC"></div>
+<div class="bigres" id="bigLC"></div>
+<div class="formulas" id="formLC"></div>
+</section>
+</div>
+<section class="panel" aria-labelledby="h-lcbode" style="margin-top:20px">
+<h2 id="h-lcbode"><span class="step">3</span>頻率響應 <span class="en">Frequency response at the speaker (differential)</span></h2>
+<div class="scroll-x"><svg class="wf-svg" id="svgLC" viewBox="0 0 900 340" role="img" aria-label="LC filter frequency response"></svg></div>
+<div class="legend" id="legLC"></div>
+<p class="lede" style="margin-top:10px;font-size:14px">試試看：負載切到「喇叭」或「開路」，Q 值會變高、截止頻率附近冒出突峰；勾選 Zobel 後突峰會被壓下來。BD 調變的差動漣波主要在 2·f<sub>sw</sub>，所以 BD 的實際衰減比只看 f<sub>sw</sub> 多約 12 dB。
+<span class="en">Switch the load to speaker or open to see the peak; add the Zobel to damp it. BD ripple sits at 2·fsw.</span></p>
+</section>
+</div>
+<!-- ================= FB ================= -->
+<div id="paneFB" hidden>
+<div class="grid-2">
+<section class="panel" aria-labelledby="h-fbin">
+<h2 id="h-fbin"><span class="step">1</span>設計條件 <span class="en">Inputs</span></h2>
+<div class="opts">
+<label class="ctl"><span class="lab">磁珠 Ferrite bead</span>
+<select id="selBead"></select></label>
+</div>
+<div class="params" id="paramsFB"></div>
+<div class="example" id="beadEx"></div>
+</section>
+<section class="panel" aria-labelledby="h-fbout">
+<h2 id="h-fbout"><span class="step">2</span>檢查 <span class="en">Checks</span></h2>
+<div class="badges" id="badgesFB"></div>
+<div class="bigres" id="bigFB"></div>
+<ul class="chk" id="chkFB"></ul>
+<div class="formulas" id="formFB" style="margin-top:12px"></div>
+</section>
+</div>
+<section class="panel" aria-labelledby="h-fbbode" style="margin-top:20px">
+<h2 id="h-fbbode"><span class="step">3</span>插入損失與磁珠阻抗 <span class="en">Insertion loss and bead impedance</span></h2>
+<div class="scroll-x"><svg class="wf-svg" id="svgFB" viewBox="0 0 900 340" role="img" aria-label="Ferrite bead filter response"></svg></div>
+<div class="legend" id="legFB"></div>
+<p class="lede" style="margin-top:10px;font-size:14px">電容越大，LC 諧振頻率越低、30 MHz 以上衰減越多（TI 建議諧振頻率低於 10 MHz）；但每個開關週期都要對電容充放電一次，損耗 2·C·V²·f<sub>sw</sub> 會直接加在待機電流上。手機上這兩件事要一起看。
+<span class="en">A bigger capacitor lowers the resonance and improves attenuation, but costs 2·C·V²·fsw of switching loss — even at idle.</span></p>
+</section>
+</div>
+<section class="panel" aria-labelledby="h-notes">
+<h2 id="h-notes"><span class="step">4</span>元件選型與注意事項 <span class="en">Component selection notes</span></h2>
+<div class="note-key"><span><span class="src pdf">原稿</span> 附件原稿內容</span><span><span class="src txt">教科書</span> 標準電路理論</span><span><span class="src ti">TI</span> 晶片廠資料</span><span><span class="src add">補充</span> Claude 補充、經驗值</span></div>
+<div class="ngroups">
+<div class="ngroup" style="--c:var(--accent)">
+<h3>截止頻率與 Q <span class="en">Corner and Q</span></h3>
+<ul>
+<li><b>f<sub>c</sub> 取 30–60 kHz</b><span class="src pdf">原稿</span><br>太低（接近 20 kHz）會讓高頻端衰減、相位失真；太高（接近 f<sub>sw</sub>）則載波衰減不足，殘留的載波跑到喇叭線上變成輻射天線。<span class="en">Too low hurts the top octave; too high leaves carrier on the speaker leads.</span></li>
+<li><b>BTL 公式</b><span class="src pdf">原稿</span><span class="src txt">教科書</span><br>半邊等效電路是 L、2C<sub>Δ</sub> 對地、負載 R<sub>L</sub>/2。取 Q = 0.707：L = R<sub>L</sub> ／ (√2·2πf<sub>c</sub>)、C<sub>Δ</sub> = 1 ／ (2√2·πf<sub>c</sub>·R<sub>L</sub>)。例：8 Ω、40 kHz → L ≈ 22.5 µH、C<sub>Δ</sub> ≈ 0.35 µF（已驗算）。<span class="en">Half-circuit: L, 2·CΔ to ground, RL/2.</span></li>
+<li><b>喇叭不是電阻</b><span class="src pdf">原稿</span><span class="src txt">教科書</span><br>20 kHz 以上音圈電感讓阻抗上升，濾波器的 Q 跟著變高，在截止頻率處出現數 dB 突峰，嚴重時觸發過壓保護。經典 Zobel 補償取 R<sub>z</sub> = Re、C<sub>z</sub> = Le／Re²，讓喇叭在高頻看起來回到純電阻。<span class="en">Rising coil impedance raises Q; a Zobel (Rz = Re, Cz = Le/Re²) flattens it.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--on)">
+<h3>電感 <span class="en">Inductor</span></h3>
+<ul>
+<li><b>I<sub>sat</sub> 要留餘量</b><span class="src pdf">原稿</span><br>飽和電流要大於「峰值音訊電流＋開關漣波電流的一半」再乘 1.3 以上。電感一飽和，電感量驟降，漣波電流暴增，THD 惡化甚至燒毀 MOSFET。<span class="en">Isat ≥ 1.3 × (peak audio + half ripple).</span></li>
+<li><b>用遮蔽式電感</b><span class="src pdf">原稿</span><br>漏磁會耦合到鄰近的類比走線與麥克風路徑。<span class="en">Use shielded parts to keep stray flux off analog traces.</span></li>
+<li><b>軟飽和也會失真</b><span class="src add">補充</span><br>鐵粉芯等材料在還沒到 I<sub>sat</sub> 前電感量就已隨電流慢慢下降，大電流時電感量的變化本身就是失真來源；高品質設計會看電感量對電流的曲線，而不只看一個 I<sub>sat</sub> 數字。<span class="en">Inductance that droops with current is itself a distortion source.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--ok)">
+<h3>電容與磁珠 <span class="en">Capacitors and beads</span></h3>
+<ul>
+<li><b>電容材質</b><span class="src pdf">原稿</span><span class="src add">補充</span><br>Y5V／Z5U 容量隨電壓大幅變動，會產生奇次諧波失真，不可用（原稿）。最佳選擇是 C0G 或薄膜電容；用 X7R 時也要查廠商的直流偏壓曲線，小尺寸、低額定電壓的 X7R 在工作電壓下容量可能少掉一大半，額定電壓要選高一點（補充）。<span class="en">C0G or film is best; X7R must be checked against its DC-bias curve.</span></li>
+<li><b>磁珠電流要打折</b><span class="src ti">TI</span><br>磁珠在直流電流增加時會飽和，低頻最大電流應只用到額定直流電流的 30–60%，否則低頻阻抗大降。磁珠額定至少要承受喇叭負載的峰值電流，例如 5 V 推 4 Ω 要選 1.5 A 以上（TI SLOA145、SLOA339）。<span class="en">Run beads at 30–60 % of their DC rating.</span></li>
+<li><b>BD 的共模電壓</b><span class="src add">補充</span><br>BD 調變沒訊號時兩端同相切換，差動電壓為零，但共模電壓整個在 0 與 V 之間跳。磁珠＋對地電容主要處理的就是這個共模雜訊，所以兩端都要對稱放置。<span class="en">BD's common-mode swing is what the bead + capacitor mainly filters; keep both sides symmetric.</span></li>
+</ul>
+</div>
+</div>
+</section>
+<footer>
+依據：LC 公式取自附件原稿並經 Claude 以半邊等效電路驗算；Ferrite bead 選型規則（諧振 &lt; 10 MHz、電流用額定的 30–60%、建議料號與 100 MHz 阻抗）取自 TI SLOA145，FB 濾波選項參考 TI SLOA339。磁珠等效電路（R<sub>dc</sub>＋L∥R∥C<sub>p</sub>）是依 100 MHz 阻抗擬合的教學模型，實際請用廠商的 Z–f 曲線與 SPICE 模型；喇叭以 Re＋Le 一階模型表示，未含共振與渦流損耗。
+<br>LC formulas from the source note, re-derived; ferrite-bead rules and part numbers from TI SLOA145 and SLOA339. Bead equivalent circuits are fitted teaching models — use vendor Z–f curves for real designs.
+</footer>
+</div>
+<script src="assets/common.js"></script>
+<script>
+glossary($('gloss'), ['LC','LPF','f<sub>c</sub>','f<sub>sw</sub>','Q','BTL','SE','Re／Le','Zobel','I<sub>sat</sub>','FB','ESR／ESL','C0G／X7R','EMI／EMC','FCC','CISPR','AD／BD','THD+N']);
+const TAU = 2 * Math.PI;
+const fK = v => v >= 1e6 ? eng(v, 'Hz', 3) : eng(v, 'Hz', 3);
+segGroup('segType', v => { $('paneLC').hidden = v !== 'lc'; $('paneFB').hidden = v !== 'fb'; v === 'lc' ? drawLC() : drawFB(); });
+setSeg('segType', 'lc');
+const fmtRows = rows => rows.map(([n, e, r]) => `<div class="f-row"><div class="name">${n}</div><div class="eq">${e}</div><div class="res">${r}</div></div>`).join('');
+const badge = (ok, t) => `<span class="badge ${ok === true ? 'ok' : ok === false ? 'warn' : 'info'}">${t}</span>`;
+function logTicks(lo, hi){ const t = []; for (let e = Math.ceil(Math.log10(lo)); e <= Math.floor(Math.log10(hi)); e++) t.push(Math.pow(10, e)); return t; }
+function vmark(ch, f, col, label, y){ svgEl('line', {x1: ch.X(f), x2: ch.X(f), y1: 24, y2: 294, stroke: col, 'stroke-dasharray': '5 4', 'stroke-width': 1.4}, ch.plot); svgEl('text', {x: ch.X(f) + 4, y, class: 'ref-lbl', fill: col}, ch.plot, label); }
+/* ================= LC ================= */
+const L = {topo: 'btl', load: 'spk', RL: 8, fc: 40, Q: 0.707, fsw: 384, V: 12, Le: 40};
+sliders([
+{k: 'RL', zh: '喇叭標稱阻抗 R<sub>L</sub>', en: 'Load (also Re)', min: 2, max: 16, step: 0.5, fmt: v => v + ' Ω'},
+{k: 'fc', zh: '截止頻率 f<sub>c</sub>', en: 'Corner', min: 20, max: 120, step: 1, fmt: v => v + ' kHz'},
+{k: 'Q', zh: '設計 Q 值', en: 'Design Q (Butterworth 0.707)', min: 0.5, max: 1.2, step: 0.01, fmt: v => fx(v, 3)},
+{k: 'fsw', zh: '開關頻率 f<sub>sw</sub>', en: 'Switching freq', min: 200, max: 2100, step: 1, fmt: v => v + ' kHz'},
+{k: 'V', zh: 'PVDD 電源', en: 'Supply', min: 3, max: 50, step: 0.5, fmt: v => v + ' V'},
+{k: 'Le', zh: '音圈電感 Le', en: 'Voice-coil L', min: 5, max: 400, step: 1, fmt: v => v + ' µH'}
+], L, $('paramsLC'), () => drawLC());
+segGroup('segTopo', v => { L.topo = v; drawLC(); }); setSeg('segTopo', 'btl');
+segGroup('segLoad', v => { L.load = v; drawLC(); }); setSeg('segLoad', 'spk');
+$('chkE').addEventListener('change', drawLC); $('chkZ').addEventListener('change', drawLC);
+function lcDesign(){
+const w = TAU * L.fc * 1e3, btl = L.topo === 'btl', R = btl ? L.RL / 2 : L.RL;
+const Lh = R / (L.Q * w), Ch = L.Q / (w * R);          // half-circuit
+const Cd = btl ? Ch / 2 : Ch;                            // C_delta (BTL) or C to ground (SE)
+return {w, btl, Lid: Lh, Cid: Cd};
+}
+function lcH(f, Lu, Cu, btl){
+const w = TAU * f, jw = x => C(0, w * x);
+let Zl = L.load === 'r' ? C(L.RL) : L.load === 'spk' ? C(L.RL, w * L.Le * 1e-6) : null;
+if ($('chkZ').checked && L.load !== 'r'){
+const Zz = cadd(C(L.RL), cinv(jw(L.Le * 1e-6 / (L.RL * L.RL))));
+Zl = Zl ? par(Zl, Zz) : Zz;
+}
+const Ch = btl ? 2 * Cu : Cu, Zc = cinv(jw(Ch));
+const Zp = Zl ? par(Zc, btl ? C(Zl.re / 2, Zl.im / 2) : Zl) : Zc;
+return cdiv(Zp, cadd(jw(Lu), Zp));
+}
+function drawLC(){
+const d = lcDesign(), useE = $('chkE').checked;
+const Lu = useE ? nearestE(d.Lid, E6) : d.Lid, Cu = useE ? nearestE(d.Cid, E12) : d.Cid;
+const fcA = 1 / (TAU * Math.sqrt(Lu * (d.btl ? 2 * Cu : Cu)));
+const fs = [...Array(401).keys()].map(i => 1e3 * Math.pow(1e4, i / 400));
+const mag = fs.map(f => dB(cabs(lcH(f, Lu, Cu, d.btl))));
+let pk = -1e9, fpk = 0; mag.forEach((m, i) => { if (m > pk){ pk = m; fpk = fs[i]; } });
+const a20 = dB(cabs(lcH(20e3, Lu, Cu, d.btl))), aSw = dB(cabs(lcH(L.fsw * 1e3, Lu, Cu, d.btl))), a2Sw = dB(cabs(lcH(2 * L.fsw * 1e3, Lu, Cu, d.btl)));
+const Ipk = d.btl ? L.V / L.RL : L.V / 2 / L.RL, dI = L.V / (4 * Lu * L.fsw * 1e3), Isat = 1.3 * (Ipk + dI / 2);
+$('badgesLC').innerHTML = [
+badge(pk < 1, pk < 1 ? '無明顯突峰 No peaking' : `突峰 +${fx(pk, 1)} dB @ ${eng(fpk, 'Hz', 3)}`),
+badge(a20 > -1.5, `20 kHz：${fx(a20, 2)} dB`),
+badge(aSw < -20, `f<sub>sw</sub> 衰減 ${fx(-aSw, 1)} dB ${aSw < -20 ? '≥ 20 dB' : '< 20 dB'}`),
+badge(null, d.btl ? 'BTL 差動' : 'SE 單端')
+].join('');
+$('bigLC').innerHTML = `<div><span>電感 L（每邊）</span><b>${eng(Lu, 'H')}</b></div>
+<div><span>${d.btl ? '差模電容 C<sub>Δ</sub>' : '電容 C（對地）'}</span><b>${eng(Cu, 'F')}</b></div>
+<div><span>實際 f<sub>c</sub></span><b>${eng(fcA, 'Hz', 3)}</b></div>
+<div><span>電感 I<sub>sat</sub> 需求</span><b>≥ ${eng(Isat, 'A')}</b></div>`;
+const R = d.btl ? 'R<sub>L</sub>/2' : 'R<sub>L</sub>';
+$('formLC').innerHTML = fmtRows([
+['電感 Inductor', d.btl ? `L = R<sub>L</sub> ／ (2·Q·2πf<sub>c</sub>) = ${L.RL} ／ (2 × ${fx(L.Q, 3)} × 2π × ${L.fc} k)${useE ? ' → 取 E6' : ''}` : `L = R<sub>L</sub> ／ (Q·2πf<sub>c</sub>) = ${L.RL} ／ (${fx(L.Q, 3)} × 2π × ${L.fc} k)${useE ? ' → 取 E6' : ''}`, eng(Lu, 'H')],
+[d.btl ? '差模電容 C_Δ' : '電容 Capacitor', d.btl ? `C<sub>Δ</sub> = Q ／ (2πf<sub>c</sub>·R<sub>L</sub>) = ${fx(L.Q, 3)} ／ (2π × ${L.fc} k × ${L.RL})${useE ? ' → 取 E12' : ''}` : `C = Q ／ (2πf<sub>c</sub>·R<sub>L</sub>)${useE ? ' → 取 E12' : ''}`, eng(Cu, 'F')],
+['品質因數 Q', `Q = ${R}·√(C<sub>half</sub>／L)；Q = 0.707 時 L = R<sub>L</sub>／(√2·2πf<sub>c</sub>) ≈ R<sub>L</sub>／(8.89·f<sub>c</sub>)`, fx((d.btl ? L.RL / 2 : L.RL) * Math.sqrt((d.btl ? 2 * Cu : Cu) / Lu), 3)],
+['開關漣波電流 Ripple', `ΔI<sub>pp</sub> ≈ V ／ (4·L·f<sub>sw</sub>)（50% 佔空比、最壞情況）= ${L.V} ／ (4 × ${eng(Lu, 'H')} × ${L.fsw} k)`, eng(dI, 'A')],
+['電感峰值電流 Peak current', `I<sub>pk</sub> = ${d.btl ? 'V／R<sub>L</sub>' : '(V/2)／R<sub>L</sub>'} + ΔI/2 = ${eng(Ipk, 'A')} + ${eng(dI / 2, 'A')}；× 1.3 餘量（原稿）`, eng(Isat, 'A')],
+['衰減 Attenuation', `|H(f<sub>sw</sub>)| = ${fx(aSw, 1)} dB；|H(2f<sub>sw</sub>)| = ${fx(a2Sw, 1)} dB（BD 差動漣波）`, fx(-aSw, 1) + ' dB'],
+...($('chkZ').checked ? [['Zobel', `R<sub>z</sub> = Re = ${L.RL} Ω；C<sub>z</sub> = Le／Re² = ${L.Le} µ ／ ${L.RL}²`, eng(L.Le * 1e-6 / (L.RL * L.RL), 'F')]] : [])
+]);
+const svg = $('svgLC'); clear(svg);
+const ch = chart(svg, {x0: 58, y0: 24, w: 820, h: 270, xlog: true, xr: [1e3, 1e7], yr: [-80, 20], xticks: logTicks(1e3, 1e7), xfmt: v => eng(v, 'Hz', 1),
+yticks: [-80, -60, -40, -20, 0, 20], yfmt: v => v + ' dB', ylabel: '|V_load／V_sw|', xlabel: '頻率 Frequency'});
+svgEl('rect', {x: ch.X(1e3), y: 24, width: ch.X(20e3) - ch.X(1e3), height: 270, fill: 'var(--ok)', opacity: .08}, ch.plot);
+ch.line(fs.map((f, i) => [f, mag[i]]), {stroke: 'var(--accent)', 'stroke-width': 3});
+if (L.load !== 'r'){
+const save = L.load; L.load = 'r';
+ch.line(fs.map(f => [f, dB(cabs(lcH(f, Lu, Cu, d.btl)))]), {stroke: 'var(--muted)', 'stroke-dasharray': '5 4', 'stroke-width': 1.6});
+L.load = save;
+}
+vmark(ch, 20e3, 'var(--ok)', '20 kHz', 40); vmark(ch, fcA, 'var(--accent)', 'f_c', 56);
+vmark(ch, L.fsw * 1e3, 'var(--on)', 'f_sw ' + fx(aSw, 0) + ' dB', 40); vmark(ch, 2 * L.fsw * 1e3, 'var(--off)', '2f_sw', 72);
+$('legLC').innerHTML = [['var(--accent)', '目前負載的響應 Response with selected load', 'solid'], ['var(--muted)', '純電阻負載（設計基準） Resistive reference', 'dashed'], ['var(--ok)', '音訊頻帶 Audio band', 'solid']]
+.map(([c, t, s]) => `<span><i style="border-top-style:${s};color:${c};border-color:${c}"></i>${t}</span>`).join('');
+}
+/* ================= FB ================= */
+const BEADS = [   // TI SLOA145 Table 2
+{id: 'mpz1608', name: 'TDK MPZ1608S221A', size: '0603', z100: 220, irat: 2.2, ex: 'TPA2016D2／TPA2017D2：1.7 W、5.5 V、8 Ω'},
+{id: 'mpz2012', name: 'TDK MPZ2012S101A', size: '0805', z100: 100, irat: 4.0, ex: 'TPA2013D1：2.7 W、3.6 V、4 Ω'},
+{id: 'blm18eg', name: 'Murata BLM18EG121SN1', size: '0603', z100: 120, irat: 2.0, ex: 'TPA2014D1／TPA2013D1：1.5–2.2 W、3.6 V、8 Ω'}
+];
+const CAPS = [100, 150, 220, 330, 470, 680, 1000, 1500, 2200];
+const F = {bead: 0, ci: 4, V: 11, RL: 8, fsw: 384, Le: 30};
+$('selBead').innerHTML = BEADS.map((b, i) => `<option value="${i}">${b.name}（${b.size}，${b.z100} Ω @ 100 MHz，${b.irat} A）</option>`).join('');
+$('selBead').addEventListener('change', e => { F.bead = +e.target.value; drawFB(); });
+sliders([
+{k: 'ci', zh: '對地電容 C（每邊）', en: 'Capacitor to ground', min: 0, max: CAPS.length - 1, step: 1, fmt: v => CAPS[v] + ' pF'},
+{k: 'V', zh: 'PVDD（升壓後）', en: 'Supply', min: 2.5, max: 12, step: 0.1, fmt: v => fx(v, 1) + ' V'},
+{k: 'RL', zh: '喇叭阻抗', en: 'Speaker', min: 4, max: 8, step: 0.5, fmt: v => v + ' Ω'},
+{k: 'fsw', zh: '開關頻率 f<sub>sw</sub>', en: 'Switching freq', min: 200, max: 1500, step: 1, fmt: v => v + ' kHz'},
+{k: 'Le', zh: '音圈電感 Le', en: 'Voice-coil L', min: 5, max: 100, step: 1, fmt: v => v + ' µH'}
+], F, $('paramsFB'), () => drawFB(), 'fb');
+/* fit a teaching model Rdc + (L ∥ R ∥ Cp) so that |Z(100 MHz)| = z100, peak near 400 MHz */
+function beadModel(b){
+const R = 1.5 * b.z100, f0 = 400e6, Rdc = 0.05;
+const z = (Lb, f) => cabs(cadd(C(Rdc), par(C(0, TAU * f * Lb), C(R), cinv(C(0, TAU * f / (Math.pow(TAU * f0, 2) * Lb))))));
+let lo = 1e-9, hi = 1e-5;
+for (let k = 0; k < 60; k++){ const m = Math.sqrt(lo * hi); (z(m, 100e6) < b.z100 ? lo = m : hi = m); }
+const Lb = Math.sqrt(lo * hi), Cp = 1 / (Math.pow(TAU * f0, 2) * Lb);
+return {Lb, R, Cp, Rdc, Z: f => cadd(C(Rdc), par(C(0, TAU * f * Lb), C(R), cinv(C(0, TAU * f * Cp))))};
+}
+function drawFB(){
+const b = BEADS[F.bead], m = beadModel(b), Cf = CAPS[F.ci] * 1e-12;
+const H = f => {   // per side: amp (≈0 Ω) → bead → node with C to ground ∥ half the speaker
+const w = TAU * f, Zl = C(F.RL / 2, w * F.Le * 1e-6 / 2), Zc = cinv(C(0, w * Cf));
+const Zp = par(Zc, Zl);
+return cdiv(Zp, cadd(m.Z(f), Zp));
+};
+const fres = 1 / (TAU * Math.sqrt(m.Lb * Cf));
+const Ipk = F.V / F.RL, ratio = Ipk / b.irat;
+const Pcap = 2 * Cf * F.V * F.V * F.fsw * 1e3;
+const at = f => dB(cabs(H(f)));
+$('badgesFB').innerHTML = [
+badge(fres < 10e6, `諧振 ${eng(fres, 'Hz', 3)} ${fres < 10e6 ? '< 10 MHz' : '> 10 MHz'}`),
+badge(ratio <= 0.6 ? true : false, `磁珠電流 ${fx(ratio * 100, 0)}% 額定`),
+badge(Pcap < 0.02, `電容切換損耗 ${eng(Pcap, 'W')}`)
+].join('');
+$('bigFB').innerHTML = `<div><span>30 MHz</span><b>${fx(at(30e6), 1)} dB</b></div><div><span>100 MHz</span><b>${fx(at(100e6), 1)} dB</b></div><div><span>300 MHz</span><b>${fx(at(300e6), 1)} dB</b></div><div><span>20 kHz 音訊</span><b>${fx(at(20e3), 2)} dB</b></div>`;
+$('chkFB').innerHTML = [
+[fres < 10e6 ? '' : 'bad', `磁珠低頻電感（模型 ${eng(m.Lb, 'H')}）與 ${CAPS[F.ci]} pF 的諧振在 ${eng(fres, 'Hz', 3)}；TI 建議低於 10 MHz。`],
+[ratio <= 0.3 ? '' : ratio <= 0.6 ? 'mid' : 'bad', `喇叭峰值電流 V／R<sub>L</sub> = ${eng(Ipk, 'A')}，是額定 ${b.irat} A 的 ${fx(ratio * 100, 0)}%；TI 建議低頻電流只用到額定的 30–60%。`],
+[Pcap < 0.02 ? '' : Pcap < 0.05 ? 'mid' : 'bad', `兩顆電容每週期充放電一次：2·C·V²·f<sub>sw</sub> = ${eng(Pcap, 'W')}，等於待機時多吃 ${eng(Pcap / F.V, 'A')}（以 PVDD 計）。`],
+['', `音訊頻帶幾乎不受影響：20 kHz 時 ${fx(at(20e3), 3)} dB。`]
+].map(([c, t]) => `<li class="${c}"><span>${t}</span></li>`).join('');
+$('formFB').innerHTML = fmtRows([
+['磁珠等效電路（教學擬合） Bead model', `R<sub>dc</sub> ${m.Rdc} Ω ＋ (L ${eng(m.Lb, 'H')} ∥ R ${m.R} Ω ∥ C<sub>p</sub> ${eng(m.Cp, 'F')})；|Z(100 MHz)| = ${fx(cabs(m.Z(100e6)), 0)} Ω`, b.z100 + ' Ω'],
+['LC 諧振 Resonance', `f = 1 ／ (2π·√(L<sub>bead</sub>·C)) = 1 ／ (2π·√(${eng(m.Lb, 'H')} × ${CAPS[F.ci]} p))`, eng(fres, 'Hz', 3)],
+['電容切換損耗 Capacitor loss', `P = 2·C·V²·f<sub>sw</sub> = 2 × ${CAPS[F.ci]} p × ${fx(F.V, 1)}² × ${F.fsw} k`, eng(Pcap, 'W')]
+]);
+$('beadEx').innerHTML = `<b>TI 搭配實例 Example</b>：${b.ex}（TI SLOA145 Table 2）`;
+const svg = $('svgFB'); clear(svg);
+const fs = [...Array(401).keys()].map(i => 1e5 * Math.pow(1e4, i / 400));
+const ch = chart(svg, {x0: 58, y0: 24, w: 760, h: 270, xlog: true, xr: [1e5, 1e9], yr: [-60, 20], xticks: logTicks(1e5, 1e9), xfmt: v => eng(v, 'Hz', 1),
+yticks: [-60, -40, -20, 0, 20], yfmt: v => v + ' dB', ylabel: '插入響應 |H|（左軸）／磁珠阻抗（右軸）', xlabel: '頻率 Frequency'});
+svgEl('rect', {x: ch.X(30e6), y: 24, width: ch.X(1e9) - ch.X(30e6), height: 270, fill: 'var(--warn)', opacity: .07}, ch.plot);
+svgEl('text', {x: ch.X(30e6) + 4, y: 288, class: 'ref-lbl', fill: 'var(--warn)'}, ch.plot, 'FCC／CISPR 輻射量測 30 MHz–1 GHz');
+ch.line(fs.map(f => [f, at(f)]), {stroke: 'var(--accent)', 'stroke-width': 3});
+// bead |Z| on right axis 0..(1.2·R)
+const zmax = m.R * 1.25, yz = z => 24 + 270 - z / zmax * 270;
+const pz = fs.map(f => [f, cabs(m.Z(f))]);
+svgEl('path', {d: pz.map((p, i) => (i ? 'L' : 'M') + ch.X(p[0]).toFixed(1) + ' ' + yz(p[1]).toFixed(1)).join(''), fill: 'none', stroke: 'var(--on)', 'stroke-width': 2, 'stroke-dasharray': '6 4'}, ch.plot);
+[0, zmax / 2, zmax].forEach(z => svgEl('text', {x: 824, y: yz(z) + 4, class: 'tick'}, svg, Math.round(z) + ' Ω'));
+vmark(ch, F.fsw * 1e3, 'var(--muted)', 'f_sw', 40); vmark(ch, fres, 'var(--teal)', '諧振', 56); vmark(ch, 100e6, 'var(--on)', b.z100 + ' Ω', 40);
+$('legFB').innerHTML = [['var(--accent)', '濾波器響應（每邊對地） Filter response', 'solid'], ['var(--on)', '磁珠阻抗 |Z|（右軸） Bead impedance', 'dashed']]
+.map(([c, t, s]) => `<span><i style="border-top-style:${s};color:${c};border-color:${c}"></i>${t}</span>`).join('');
+}
+drawLC();
+</script>
+</body>
+</html>

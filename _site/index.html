@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>功率放大器互動教學</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/series.css">
+<style>
+.flow-line{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700;font-size:14px}
+.flow-line span{border:1.5px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--paper-2)}
+.flow-line i{font-style:normal;color:var(--muted)}
+.card.soon{border-top-style:dashed;opacity:.72;box-shadow:none}
+.card.soon:hover{transform:none}
+.card.soon .go{color:var(--muted)}
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 22px;margin-bottom:12px}
+.pick .ctl{flex-direction:column;align-items:flex-start;gap:4px}
+.pick .lab{font-weight:700;font-size:13.5px;color:var(--muted)}
+.rec{border:2px solid var(--c,var(--accent));border-radius:12px;padding:12px 14px;background:var(--paper-2)}
+.rec h3{margin:0 0 4px;font-size:19px;color:var(--c,var(--accent))}
+.rec p{margin:0 0 4px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><span class="cur" aria-current="page"><b>HOME</b>系列首頁</span><a href="conduction-angle.html"><b>01 CONDUCTION ANGLE</b>導通角與效率</a><span class="soon" title="規劃中 Planned"><b>02 LINEAR STAGE</b>A／B／AB 輸出級</span><span class="soon" title="規劃中 Planned"><b>03 THERMAL</b>熱設計與熱奔潰</span><a href="class-d.html"><b>04 CLASS-D</b>開關放大原理</a><a href="output-filter.html"><b>05 OUTPUT FILTER</b>輸出濾波器設計</a><span class="soon" title="規劃中 Planned"><b>06 LAYOUT · EMI</b>PCB 佈線</span><span class="soon" title="規劃中 Planned"><b>07 RF PA</b>射頻功率放大器</span><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a></nav>
+<header>
+<div>
+<div class="eyebrow">Power Amplifier Series</div>
+<h1>功率放大器互動教學<small>Power amplifiers · Class A, B, AB, C, D — from theory to the phone speaker</small></h1>
+</div>
+<div class="chip-dc">CLASS <span>A→D</span></div>
+<p class="lede">功率放大器（PA）的分類，本質是在<b>線性度</b>與<b>效率</b>之間取捨：A、AB、B、C 類由導通角決定，電晶體工作在線性區；D 類把電晶體當開關，用 PWM 調變與輸出濾波器還原訊號。這個系列以<b>手機喇叭</b>為主軸——為什麼手機一定用 Class-D、為什麼可以不用 LC 濾波器、Smart PA 的升壓與喇叭保護在做什麼。第一階段先上線導通角、Class-D 原理與輸出濾波器三頁，線性輸出級、熱設計、PCB 佈線與射頻 PA 接著補上。
+<span class="en">Amplifier classes trade linearity for efficiency. This series follows the phone speaker: why phones use Class-D, why they can skip the LC filter, and what a smart PA's boost and speaker protection do.</span></p>
+</header>
+<section class="panel" aria-labelledby="h-chain">
+<h2 id="h-chain">手機喇叭的訊號鏈 <span class="en">The phone speaker chain</span></h2>
+<div class="flow-line">
+<span>SoC 數位音訊 I²S／TDM</span><i>→</i><span>Smart PA 內 DSP：EQ・限幅・喇叭保護</span><i>→</i><span>Class-H 升壓 3.6 V → ≈ 11 V</span><i>→</i><span>Class-D H 橋（BTL・BD 調變）</span><i>→</i><span>Ferrite bead＋C（選用）</span><i>→</i><span>微型喇叭 4–8 Ω</span><i>↺</i><span>IV sense 回授</span>
+</div>
+</section>
+<div class="cards">
+<a class="card" href="conduction-angle.html" style="--c:var(--accent)">
+<span class="no">01 · CONDUCTION ANGLE</span>
+<h2>導通角與效率<small>A · AB · B · C on one curve</small></h2>
+<p>拖動導通角 θ，看驅動、電流波形、諧波與<b>理論效率 η(θ)</b> 同步變化；再比較四種類別的<b>效率對輸出功率</b>曲線。</p>
+<ul><li>單管諧振負載 vs 推挽</li><li>手機電池直推、Smart PA、家用 100 W 三種情境</li></ul>
+<span class="go">開啟 Open →</span>
+</a>
+<div class="card soon" style="--c:var(--teal)">
+<span class="no">02 · LINEAR STAGE · 規劃中</span>
+<h2>A／B／AB 輸出級<small>Push-pull · crossover · bias</small></h2>
+<p>推挽電路電流動畫、偏壓與交越失真、轉移曲線與 FFT 諧波，單端與推挽 A 類比較。</p>
+<span class="go">即將推出 Planned</span>
+</div>
+<div class="card soon" style="--c:var(--warn)">
+<span class="no">03 · THERMAL · 規劃中</span>
+<h2>熱設計與熱奔潰<small>V<sub>be</sub> multiplier · heatsink</small></h2>
+<p>V<sub>be</sub> 倍增器偏壓、熱回授正回饋模擬、射極電阻與熱耦合，以及用最大損耗點計算散熱片熱阻。</p>
+<span class="go">即將推出 Planned</span>
+</div>
+<a class="card" href="class-d.html" style="--c:var(--on)">
+<span class="no">04 · CLASS-D</span>
+<h2>Class-D 開關放大<small>PWM · H-bridge · smart PA</small></h2>
+<p>三角波比較產生 PWM、H 橋電流路徑動畫；<b>AD 與 BD 調變</b>的喇叭漣波電流以實際 f<sub>sw</sub> 與音圈電感計算；Smart PA 升壓與 Class-H 電源軌追蹤。</p>
+<ul><li>為什麼手機可以 Filter-free</li><li>電池峰值電流與喇叭保護</li></ul>
+<span class="go">開啟 Open →</span>
+</a>
+<a class="card" href="output-filter.html" style="--c:var(--ok)">
+<span class="no">05 · OUTPUT FILTER</span>
+<h2>輸出濾波器設計<small>LC reconstruction · ferrite bead</small></h2>
+<p>輸入 R<sub>L</sub>、f<sub>c</sub>、Q、SE／BTL 算出 L、C 並畫頻率響應；切換喇叭模型、開路與 Zobel 看突峰；手機用 <b>Ferrite bead＋C</b> 的諧振、電流與損耗檢查。</p>
+<ul><li>E6／E12 標準值</li><li>TI 建議磁珠料號</li></ul>
+<span class="go">開啟 Open →</span>
+</a>
+<div class="card soon" style="--c:var(--off)">
+<span class="no">06 · LAYOUT · EMI · 規劃中</span>
+<h2>PCB 佈線與 EMI<small>Hot loop · SW node · grounding</small></h2>
+<p>可點擊的佈局示意圖：高頻熱迴路、開關節點、PGND／AGND 單點、縫合過孔、差動輸出線；迴路面積對輻射計算、展頻前後頻譜、RC snubber。</p>
+<span class="go">即將推出 Planned</span>
+</div>
+<div class="card soon" style="--c:var(--accent)">
+<span class="no">07 · RF PA · 規劃中</span>
+<h2>射頻功率放大器<small>Class C · E · F · Doherty</small></h2>
+<p>完整的 RF PA 頁：Class C 諧振槽、Class E／F 的電壓電流整形、負載拉移、手機 RF 前端 PA 的效率與線性化。</p>
+<span class="go">即將推出 Planned</span>
+</div>
+</div>
+<section class="panel" aria-labelledby="h-pick">
+<h2 id="h-pick">快速選型 <span class="en">Quick selector</span></h2>
+<div class="pick">
+<div class="ctl"><span class="lab">應用 Application</span>
+<div class="seg wrap-ok" id="segApp" role="group" aria-label="Application"><button type="button" data-v="phone">手機／穿戴</button><button type="button" data-v="car">車用／藍牙喇叭</button><button type="button" data-v="hifi">Hi-Fi 音響</button><button type="button" data-v="rf">RF 發射</button></div></div>
+<div class="ctl"><span class="lab">最優先 Priority</span>
+<div class="seg wrap-ok" id="segPri" role="group" aria-label="Priority"><button type="button" data-v="eff">效率／散熱</button><button type="button" data-v="thd">最低失真</button><button type="button" data-v="emi">最低 EMI</button></div></div>
+</div>
+<div class="rec" id="rec"></div>
+</section>
+<section class="panel" aria-labelledby="h-cmp">
+<h2 id="h-cmp">四大類別比較 <span class="en">Core comparison</span></h2>
+<div class="scroll-x">
+<table class="tbl">
+<thead><tr><th>類型</th><th class="m">導通角</th><th class="m">理論最高效率</th><th>線性度／失真</th><th>元件狀態</th><th>主要挑戰</th></tr></thead>
+<tbody>
+<tr><td><b>Class-A</b></td><td class="m">360°</td><td class="m">25%（阻性）／50%（電感、變壓器）</td><td>極高線性度，無交越失真</td><td>主動區連續導通</td><td>靜態功耗極高，需大散熱</td></tr>
+<tr><td><b>Class-B</b></td><td class="m">180°</td><td class="m">78.5%</td><td>交越失真</td><td>推挽交替導通</td><td>0 V 附近的死區</td></tr>
+<tr><td><b>Class-AB</b></td><td class="m">180°–360°</td><td class="m">滿功率約 50%–70%，小功率大幅下降</td><td>高，消除大部分交越失真</td><td>靜態微導通、大訊號推挽</td><td>偏壓熱補償、熱奔潰</td></tr>
+<tr><td><b>Class-D</b></td><td class="m">開關</td><td class="m">中高功率 90% 以上，小功率因固定損耗下降</td><td>取決於回授、死區與濾波</td><td>飽和／截止切換</td><td>EMI、輸出濾波、死區時間</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<section class="panel" aria-labelledby="h-rel">
+<h2 id="h-rel">相關系列 <span class="en">Related series</span></h2>
+<div class="cards">
+<a class="card" href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--accent)"><span class="no">SERIES · DC-DC</span><h2>DC-DC 拓撲<small>Boost · Buck · 4-SW · SEPIC · Flyback · ACF</small></h2><p>六種拓撲的電流回路動畫與同步波形。Smart PA 的升壓電源就是 Boost；Class-D 半橋的開關行為與同步 Buck 幾乎一樣，只是佔空比跟著音訊變化。</p><ul><li>Boost：Smart PA 的 Class-H 升壓</li><li>同步 Buck：和 Class-D 半橋同一種開關結構</li></ul><span class="go">開啟 Open ↗</span></a>
+</div>
+</section>
+<footer>
+內容來源：附件 Gemini 對話原稿（Class A–D 比較、LC 濾波器公式與 PCB EMI 實務），由 Claude 驗算公式、修正與補充；手機 Smart PA 與 Filter-free 資料取自 TI SLOA145、TAS2563 與 Cirrus Logic CS35L41 公開資料。每頁注意事項都標出出處（原稿／教科書／晶片廠／補充）。頁面為教學模型，實際設計請以晶片規格書為準。
+<br>Based on an AI-generated source note, checked and extended by Claude, plus TI and Cirrus Logic public documents. Teaching models only.
+</footer>
+</div>
+<script src="assets/common.js"></script>
+<script>
+const SEL = {app: 'phone', pri: 'eff'};
+const RECS = {
+phone: {eff: ['Class-D Smart PA（BD 調變、Filter-free）', '電池供電、空間極小、平均功率低：只有 Class-D 在小功率仍有高效率。選內建升壓與 IV sense 的 Smart PA。', 'class-d.html', 'var(--on)'],
+thd: ['Class-D Smart PA＋閉迴路回授', '手機喇叭本身的失真遠大於放大器，選 THD+N 好的閉迴路 Class-D 即可；有線耳機輸出才會用 Class-AB／Class-G 耳機放大器。', 'class-d.html', 'var(--on)'],
+emi: ['Class-D＋Ferrite bead＋C', '保留 Filter-free 的效率，在輸出端加磁珠與小電容壓 30 MHz–1 GHz；喇叭線很長時才考慮 LC。', 'output-filter.html', 'var(--ok)']},
+car:   {eff: ['Class-D（BTL＋LC 濾波）', '功率大、散熱受限：Class-D 搭配 LC 重建濾波器，喇叭線長，濾波不能省。', 'output-filter.html', 'var(--ok)'],
+thd: ['Class-D 閉迴路（post-filter 回授）或 Class-AB', '現代閉迴路 Class-D 的 THD 已接近 AB；需要最低失真且散熱允許時才用 AB。', 'conduction-angle.html', 'var(--accent)'],
+emi: ['Class-D＋LC＋展頻／邊緣速率控制', '車用 CISPR 25 很嚴：LC 濾波、展頻與邊緣速率控制一起用，佈線見 06 頁（規劃中）。', 'output-filter.html', 'var(--ok)']},
+hifi:  {eff: ['Class-D 或 Class-G／H', '大功率發燒機也大量改用 Class-D；想保留線性輸出級時，Class-G／H 用切換電源軌提升效率。', 'conduction-angle.html', 'var(--accent)'],
+thd: ['Class-AB（或 Class-A）', '散熱與功耗沒有限制時，AB 類與 A 類的失真表現最好、最可預測。', 'conduction-angle.html', 'var(--accent)'],
+emi: ['Class-AB', '線性放大器沒有開關雜訊，是 EMI 最乾淨的選擇。', 'conduction-angle.html', 'var(--accent)']},
+rf:    {eff: ['Class-C／E／F', '定包絡調變（FM、GMSK）可用高效率的非線性或開關型 PA；細節在 07 頁（規劃中）。', 'conduction-angle.html', 'var(--off)'],
+thd: ['Class-A／AB（加線性化）', '需要線性度的調變（QAM、OFDM）用 AB 類並以回退或 DPD 線性化；07 頁會完整說明。', 'conduction-angle.html', 'var(--off)'],
+emi: ['Class-AB＋輸出諧波濾波', 'RF PA 的諧波由輸出匹配與濾波網路抑制。', 'conduction-angle.html', 'var(--off)']}
+};
+function rec(){
+const [t, p, href, c] = RECS[SEL.app][SEL.pri];
+const box = $('rec'); box.style.setProperty('--c', c);
+box.innerHTML = `<h3>${t}</h3><p>${p}</p><p><a href="${href}" style="color:var(--accent);font-weight:700">看相關頁面 →</a></p>`;
+}
+segGroup('segApp', v => { SEL.app = v; rec(); }); segGroup('segPri', v => { SEL.pri = v; rec(); });
+setSeg('segApp', 'phone'); setSeg('segPri', 'eff'); rec();
+</script>
+</body>
+</html>
