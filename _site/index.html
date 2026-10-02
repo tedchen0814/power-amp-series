@@ -25,7 +25,7 @@
 </head>
 <body>
 <div class="wrap">
-<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><span class="cur" aria-current="page"><b>HOME</b>系列首頁</span><a href="conduction-angle.html"><b>01 CONDUCTION ANGLE</b>導通角與效率</a><a href="linear-stage.html"><b>02 LINEAR STAGE</b>A／B／AB 輸出級</a><a href="thermal.html"><b>03 THERMAL</b>熱設計與熱奔潰</a><a href="class-d.html"><b>04 CLASS-D</b>開關放大原理</a><a href="output-filter.html"><b>05 OUTPUT FILTER</b>輸出濾波器設計</a><a href="layout-emi.html"><b>06 LAYOUT · EMI</b>PCB 佈線與 EMI</a><a href="rf-pa.html"><b>07 RF PA</b>射頻功率放大器</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a></nav>
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><span class="cur" aria-current="page"><b>HOME</b>系列首頁</span><a href="conduction-angle.html"><b>01 CONDUCTION ANGLE</b>導通角與效率</a><a href="linear-stage.html"><b>02 LINEAR STAGE</b>A／B／AB 輸出級</a><a href="thermal.html"><b>03 THERMAL</b>熱設計與熱奔潰</a><a href="class-d.html"><b>04 CLASS-D</b>開關放大原理</a><a href="output-filter.html"><b>05 OUTPUT FILTER</b>輸出濾波器設計</a><a href="layout-emi.html"><b>06 LAYOUT · EMI</b>PCB 佈線與 EMI</a><a href="rf-pa.html"><b>07 RF PA</b>射頻功率放大器</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://poe-pd-series.vercel.app/" target="_blank" rel="noopener"><b>↗ PoE PD</b>受電端系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a></nav>
 <header>
 <div>
 <div class="eyebrow">Power Amplifier Series</div>
@@ -121,6 +121,8 @@
 <h2 id="h-rel">相關系列 <span class="en">Related series</span></h2>
 <div class="cards">
 <a class="card" href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--accent)"><span class="no">SERIES · DC-DC</span><h2>DC-DC 拓撲<small>Boost · Buck · 4-SW · SEPIC · Flyback · ACF</small></h2><p>六種拓撲的電流回路動畫與同步波形。Smart PA 的升壓電源就是 Boost；Class-D 半橋的開關行為與同步 Buck 幾乎一樣，只是佔空比跟著音訊變化。</p><ul><li>Boost：Smart PA 的 Class-H 升壓</li><li>同步 Buck：和 Class-D 半橋同一種開關結構</li></ul><span class="go">開啟 Open ↗</span></a>
+<a class="card" href="https://poe-pd-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--on)"><span class="no">SERIES · PoE PD</span><h2>PoE PD 受電端<small>Power over Ethernet · RJ45 → DC-DC</small></h2><p>從網路線到板上電壓：架構、握手狀態機、功率預算、DC-DC 拓撲選擇、PSE 端與 LLDP 功率協商。</p><ul><li>PoE 供電的網路喇叭與會議設備用的就是 Class-D</li><li>IEEE 802.3af／at／bt</li></ul><span class="go">開啟 Open ↗</span></a>
+<a class="card" href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener" style="--c:var(--teal)"><span class="no">SERIES · MULTI-PHASE VRM</span><h2>多相供電 VRM<small>CPU／GPU core power · 9 stations</small></h2><p>CPU 核心供電：交錯並聯與紋波抵消、DrMOS、電流均流、Load-line、相數切換、佈局除錯。</p><ul><li>每一相同步 Buck 和 Class-D 半橋是同一種開關結構</li><li>熱迴路與開關節點佈線觀念相通</li></ul><span class="go">開啟 Open ↗</span></a>
 </div>
 </section>
 <footer>
