@@ -167,6 +167,16 @@ segGroup('segCls', v => { S.th = +v; sync1(); draw(); });
 segGroup('segMode', v => { S.mode = v; draw(); });
 setSeg('segMode', 'rf'); setSeg('segCls', '230');
 function draw(){ drawWave(); drawEta(); }
+let WV = null;
+function waveCursor(){
+const {A, B, c, P2} = WV, p = S.ph % P2;
+WV.line.setAttribute('x1', A.X(p)); WV.line.setAttribute('x2', A.X(p));
+WV.d1.setAttribute('cx', A.X(p)); WV.d1.setAttribute('cy', A.Y(Math.cos(p) - c));
+const on1 = Math.cos(p) > c, on2 = S.mode === 'pp' && -Math.cos(p) > c;
+const yv = S.mode === 'rf' ? iDev(Math.cos(p), c) : iDev(Math.cos(p), c) - iDev(-Math.cos(p), c);
+WV.d2.setAttribute('cx', B.X(p)); WV.d2.setAttribute('cy', B.Y(yv));
+WV.st.textContent = S.mode === 'rf' ? (on1 ? 'Q 導通 ON' : 'Q 截止 OFF') : `Q1 ${on1 ? 'ON' : 'off'} · Q2 ${on2 ? 'ON' : 'off'}`;
+}
 function drawWave(){
 const svg = $('svgWave'); clear(svg);
 const K = coefs(S.th), c = K.c, P2 = 2 * TAU;
@@ -212,15 +222,13 @@ B.line(xs.map(p => [p, -iDev(-Math.cos(p), c)]), {stroke: 'var(--off)', 'stroke-
 B.line(xs.map(p => [p, out(p)]), {stroke: 'var(--ink)', 'stroke-width': 2});
 leg.push(['var(--on)', '上管 Q1 推 Push', 'solid'], ['var(--off)', '下管 Q2 拉 Pull', 'solid'], ['var(--ink)', '喇叭電流 = Q1 − Q2 Load current', 'solid'], ['var(--muted)', '理想正弦 Ideal sine', 'dashed']);
 }
-// cursor
-const p = S.ph % P2;
-svgEl('line', {x1: A.X(p), x2: A.X(p), y1: 22, y2: 344, stroke: 'var(--ink)', 'stroke-width': 1, opacity: .45}, svg);
-const on1 = Math.cos(p) > c, on2 = S.mode === 'pp' && -Math.cos(p) > c;
-svgEl('circle', {cx: A.X(p), cy: A.Y(Math.cos(p) - c), r: 5, fill: 'var(--accent)'}, svg);
-const yv = S.mode === 'rf' ? iDev(Math.cos(p), c) : iDev(Math.cos(p), c) - iDev(-Math.cos(p), c);
-svgEl('circle', {cx: B.X(p), cy: B.Y(yv), r: 5, fill: 'var(--ink)'}, svg);
-const st = S.mode === 'rf' ? (on1 ? 'Q 導通 ON' : 'Q 截止 OFF') : `Q1 ${on1 ? 'ON' : 'off'} · Q2 ${on2 ? 'ON' : 'off'}`;
-svgEl('text', {x: 622, y: 18, 'text-anchor': 'end', class: 'read'}, svg, st);
+// cursor: built once per redraw, moved in place by waveCursor() while playing
+WV = {A, B, c, P2,
+line: svgEl('line', {y1: 22, y2: 344, stroke: 'var(--ink)', 'stroke-width': 1, opacity: .45}, svg),
+d1: svgEl('circle', {r: 5, fill: 'var(--accent)'}, svg),
+d2: svgEl('circle', {r: 5, fill: 'var(--ink)'}, svg),
+st: svgEl('text', {x: 622, y: 18, 'text-anchor': 'end', class: 'read'}, svg, '')};
+waveCursor();
 $('legWave').innerHTML = leg.map(([col, t, s]) => `<span><i style="border-top-style:${s};color:${col};border-color:${col}"></i>${t}</span>`).join('');
 }
 function drawEta(){
@@ -267,7 +275,7 @@ let last = 0;
 function tick(ts){
 if (!S.playing) return;
 if (last) S.ph += (ts - last) / 1000 * 1.6;
-last = ts; drawWave(); requestAnimationFrame(tick);
+last = ts; waveCursor(); requestAnimationFrame(tick);
 }
 $('btnPlay').addEventListener('click', () => {
 S.playing = !S.playing; last = 0;

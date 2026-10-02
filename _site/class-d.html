@@ -19,6 +19,8 @@
 .chain2 span{border:1.5px solid var(--line);border-radius:8px;padding:5px 10px;background:var(--paper-2);font-weight:700;display:flex;flex-direction:column;justify-content:center}
 .chain2 span small{font-weight:500;color:var(--muted);font-size:11.5px}
 .chain2 i{font-style:normal;color:var(--muted);align-self:center}
+#pill{min-width:17.5em;text-align:center}
+#btnPlay{min-width:118px}
 </style>
 </head>
 <body>
@@ -214,10 +216,11 @@ svgEl('path', {d: path(q => y5(q.iDisp), 0, 1), fill: 'none', stroke: 'var(--on)
 svgEl('path', {d: path(q => y5(SIM.ia * Math.sin(TAU * q.x))), fill: 'none', stroke: 'var(--ok)', 'stroke-width': 2, 'stroke-dasharray': '6 4'}, svg);
 svgEl('text', {x: 50, y: y5(im / 1.1) + 4, 'text-anchor': 'end', class: 'tick'}, svg, eng(im / 1.1, 'A', 2));
 svgEl('text', {x: 624, y: t5.y0 + t5.h + 16, 'text-anchor': 'end', class: 'tick'}, svg, `一個音訊週期（顯示 ${P.ratio} 個載波）`);
-// cursor
-const cx = X(cur);
-svgEl('line', {x1: cx, x2: cx, y1: 16, y2: 452, stroke: 'var(--warn)', 'stroke-width': 1.4}, svg);
+// cursor: drawn once per redraw, moved by moveCursor() while playing
+pwmCursor = svgEl('line', {x1: X(cur), x2: X(cur), y1: 16, y2: 452, stroke: 'var(--warn)', 'stroke-width': 1.4}, svg);
 }
+let pwmCursor = null;
+function moveCursor(){ const x = 56 + cur * 568; pwmCursor.setAttribute('x1', x); pwmCursor.setAttribute('x2', x); }
 const STATES = {
 '10': {on: 'Q1、Q4', v: '+V', zh: '正向推動 Drive +', cls: 'on', path: 'M140 40 V180 H380 V320', ph: 'on'},
 '01': {on: 'Q3、Q2', v: '−V', zh: '反向推動 Drive −', cls: 'on', path: 'M380 40 V180 H140 V320', ph: 'on'},
@@ -225,41 +228,59 @@ const STATES = {
 '00': {on: 'Q2、Q4', v: '0', zh: '下管續流 Low-side freewheel', cls: 'off', path: 'M140 180 V320 H380 V180 H140', ph: 'off'}
 };
 function sampleAt(x){ return SIM.out[Math.min(SIM.out.length - 1, Math.floor(x * SIM.out.length))]; }
-function drawBridge(){
-const svg = $('svgBr'); clear(svg);
-const s = sampleAt(cur), key = '' + s.op + s.on, st = STATES[key];
-// paths are drawn in the direction of: '10' positive current, all others negative current; flip when the coil current disagrees
-const flowRev = key === '10' ? s.i < 0 : s.i > 0;
-const g = svgEl('g', {}, svg);
-svgEl('path', {d: st.path, class: 'glow', stroke: st.ph === 'on' ? 'var(--on)' : 'var(--off)'}, g);
-svgEl('path', {d: st.path, class: 'flow' + (flowRev ? ' rev' : ''), stroke: st.ph === 'on' ? 'var(--on)' : 'var(--off)'}, g);
-// rails and legs
+/* H-bridge: static parts built once; updateBridge() only changes attributes, so nothing reflows while playing */
+const BR = {};
+(function buildBridge(){
+const svg = $('svgBr'), g = svgEl('g', {}, svg);
+BR.glow = svgEl('path', {d: '', class: 'glow'}, g);
+BR.flow = svgEl('path', {d: '', class: 'flow'}, g);
 svgEl('path', {d: 'M100 40 H420 M100 320 H420 M140 40 V320 M380 40 V320 M140 180 H215 M305 180 H380', class: 'wire'}, svg);
 svgEl('text', {x: 96, y: 45, 'text-anchor': 'end', class: 'lbl'}, svg, 'PVDD');
 svgEl('text', {x: 96, y: 325, 'text-anchor': 'end', class: 'lbl'}, svg, 'PGND');
-[['Q1', 140, 100, s.op === 1], ['Q2', 140, 260, s.op === 0], ['Q3', 380, 100, s.on === 1], ['Q4', 380, 260, s.on === 0]].forEach(([n, x, y, on]) => {
-svgEl('rect', {x: x - 26, y: y - 22, width: 52, height: 44, rx: 6, class: 'qbox ' + (on ? 'on' : 'off')}, svg);
+BR.q = [['Q1', 140, 100], ['Q2', 140, 260], ['Q3', 380, 100], ['Q4', 380, 260]].map(([n, x, y]) => {
+const r = svgEl('rect', {x: x - 26, y: y - 22, width: 52, height: 44, rx: 6, class: 'qbox off'}, svg);
 svgEl('text', {x, y: y - 2, 'text-anchor': 'middle', class: 'lbl'}, svg, n);
-svgEl('text', {x, y: y + 15, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, on ? 'ON' : 'off');
+const t = svgEl('text', {x, y: y + 15, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, 'off');
+return {r, t};
 });
-// speaker
 svgEl('rect', {x: 215, y: 166, width: 30, height: 28, class: 'term'}, svg);
 svgEl('path', {d: 'M245 166 L290 140 V220 L245 194 Z', class: 'term'}, svg);
 svgEl('path', {d: 'M290 140 H305 V220 H290', class: 'wire'}, svg);
 svgEl('text', {x: 260, y: 240, 'text-anchor': 'middle', class: 'lbl-sm'}, svg, '喇叭 Re + Le');
-svgEl('text', {x: 140 + 10, y: 176, class: 'read'}, svg, 'OUT+');
-svgEl('text', {x: 380 - 10, y: 176, 'text-anchor': 'end', class: 'read'}, svg, 'OUT−');
+svgEl('text', {x: 150, y: 176, class: 'read'}, svg, 'OUT+');
+svgEl('text', {x: 370, y: 176, 'text-anchor': 'end', class: 'read'}, svg, 'OUT−');
 svgEl('circle', {cx: 140, cy: 180, r: 4, class: 'node'}, svg); svgEl('circle', {cx: 380, cy: 180, r: 4, class: 'node'}, svg);
-svgEl('text', {x: 260, y: 300, 'text-anchor': 'middle', class: 'read'}, svg, `V_diff = ${st.v}   i = ${eng(s.i, 'A', 2)}`);
+BR.vd = svgEl('text', {x: 168, y: 300, class: 'read'}, svg, '');
+BR.i = svgEl('text', {x: 268, y: 300, class: 'read'}, svg, '');
+$('stTbl').innerHTML = Object.entries(STATES).map(([k, v]) => `<tr data-k="${k}"><td class="m">${k[0] === '1' ? 'V' : '0'}</td><td class="m">${k[1] === '1' ? 'V' : '0'}</td><td>${v.on}</td><td class="m">${v.v}</td><td>${v.zh}${(k === '11' || k === '00') ? '<span class="en" style="display:inline"> · 只有 BD 會用到</span>' : ''}</td></tr>`).join('');
+})();
+let lastKey = null, lastRev = null;
+function updateBridge(){
+const s = sampleAt(cur), key = '' + s.op + s.on, st = STATES[key];
+// paths are drawn in the direction of: '10' positive current, all others negative current; flip when the coil current disagrees
+const flowRev = key === '10' ? s.i < 0 : s.i > 0;
+if (key !== lastKey || flowRev !== lastRev){
+const col = st.ph === 'on' ? 'var(--on)' : 'var(--off)';
+BR.glow.setAttribute('d', st.path); BR.glow.setAttribute('stroke', col);
+BR.flow.setAttribute('d', st.path); BR.flow.setAttribute('stroke', col);
+BR.flow.setAttribute('class', 'flow' + (flowRev ? ' rev' : ''));
+[s.op === 1, s.op === 0, s.on === 1, s.on === 0].forEach((on, n) => {
+BR.q[n].r.setAttribute('class', 'qbox ' + (on ? 'on' : 'off')); BR.q[n].t.textContent = on ? 'ON' : 'off';
+});
 const pill = $('pill'); pill.className = 'phase-pill ' + st.cls; pill.textContent = st.zh;
-$('stTbl').innerHTML = Object.entries(STATES).map(([k, v]) => `<tr class="${k === key ? 'cur' : ''}"><td class="m">${k[0] === '1' ? 'V' : '0'}</td><td class="m">${k[1] === '1' ? 'V' : '0'}</td><td>${v.on}</td><td class="m">${v.v}</td><td>${v.zh}${(k === '11' || k === '00') ? '<span class="en" style="display:inline"> · 只有 BD 會用到</span>' : ''}</td></tr>`).join('');
+$('stTbl').querySelectorAll('tr').forEach(tr => tr.classList.toggle('cur', tr.dataset.k === key));
+lastKey = key; lastRev = flowRev;
 }
-$('scrub').addEventListener('input', e => { cur = e.target.value / 1000; drawPwm(); drawBridge(); });
+BR.vd.textContent = 'V_diff = ' + st.v;
+BR.i.textContent = 'i = ' + eng(s.i, 'A', 2);
+}
+function drawBridge(){ lastKey = null; updateBridge(); }
+$('scrub').addEventListener('input', e => { cur = e.target.value / 1000; moveCursor(); updateBridge(); });
 let last = 0;
 function tick(ts){
 if (!playing) return;
 if (last) cur = (cur + (ts - last) / 1000 * 0.05) % 1;
-last = ts; $('scrub').value = Math.round(cur * 1000); drawPwm(); drawBridge(); requestAnimationFrame(tick);
+last = ts; $('scrub').value = Math.round(cur * 1000); moveCursor(); updateBridge(); requestAnimationFrame(tick);
 }
 $('btnPlay').addEventListener('click', () => {
 playing = !playing; last = 0;
