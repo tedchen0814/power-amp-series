@@ -1,0 +1,297 @@
+<!--#TITLE-->
+熱設計與熱奔潰 · 功率放大器
+<!--#H1-->
+熱設計與熱奔潰
+<!--#H1_EN-->
+V<sub>be</sub> multiplier · thermal runaway loop · heatsink sizing
+<!--#CHIP-->
+−2 mV<span>/</span>°C
+<!--#LEDE-->
+<p class="lede">AB 類的偏壓電壓固定時，功率管變熱 → V<sub>be</sub> 每升 1 °C 約降 2 mV → 同樣的偏壓推出更大的 I<sub>Q</sub> → 更熱。這是一個<b>正回饋迴路</b>，迴路增益超過 1 就是<b>熱奔潰</b>。這一頁分三段：先用 <b>V<sub>be</sub> 倍增器</b>算出偏壓電阻與它的溫度係數；再用熱模擬看射極電阻、熱耦合與補償量怎麼決定 I<sub>Q</sub> 是穩定、慢慢漂高，還是失控；最後用 B 類的最大損耗點算出散熱片需要的熱阻。
+  <span class="en">With a fixed bias voltage, a hotter device conducts more and heats further — positive feedback. This page sizes the Vbe multiplier, simulates the thermal loop, and sizes the heatsink from the worst-case dissipation.</span></p>
+<!--#STYLE-->
+.wf-svg{width:100%;height:auto;display:block;min-width:520px}
+.opts{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:10px}
+.opts .lab{font-weight:700;color:var(--muted);font-size:13.5px}
+.loop{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700;font-size:14px;margin-bottom:12px}
+.loop span{border:1.5px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--paper-2)}
+.loop i{font-style:normal;color:var(--warn);font-weight:900}
+.mult-svg{width:100%;max-width:300px;height:auto;display:block;margin:0 auto}
+<!--#BODY-->
+  <section class="panel" aria-labelledby="h-gloss">
+    <h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+    <details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+  </section>
+
+  <section class="panel" aria-labelledby="h-loop">
+    <h2 id="h-loop">熱回授迴路 <span class="en">The thermal feedback loop</span></h2>
+    <div class="loop"><span>功率管發熱 P = V<sub>CC</sub>·I<sub>Q</sub></span><i>→</i><span>T<sub>j</sub> 上升</span><i>→</i><span>V<sub>be</sub> 下降 2 mV/°C</span><i>→</i><span>固定偏壓下 I<sub>Q</sub> 增加</span><i>↺</i></div>
+    <p class="lede" style="margin:0">兩個煞車：<b>射極電阻 R<sub>e</sub></b>（I<sub>Q</sub> 變大時 R<sub>e</sub> 上的壓降吃掉多出來的 V<sub>be</sub> 餘量）與 <b>V<sub>be</sub> 倍增器的熱補償</b>（裝在散熱片上，跟著變熱把偏壓電壓一起降下來）。
+      <span class="en">Two brakes: the emitter resistor, and a Vbe multiplier mounted on the heatsink that lowers the bias as it warms.</span></p>
+  </section>
+
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-mult">
+      <h2 id="h-mult"><span class="step">1</span>V<sub>be</sub> 倍增器設計 <span class="en">V<sub>be</sub> multiplier</span></h2>
+      <svg class="mult-svg" id="svgMult" viewBox="0 0 300 250" role="img" aria-label="Vbe multiplier schematic"></svg>
+      <div class="params" id="paramsM" style="margin-top:10px"></div>
+      <div class="formulas" id="formM" style="margin-top:12px"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-gain">
+      <h2 id="h-gain"><span class="step">2</span>熱迴路增益 <span class="en">Thermal loop gain</span></h2>
+      <div class="badges" id="badgesL"></div>
+      <div class="bigres" id="bigL"></div>
+      <div class="formulas" id="formL"></div>
+      <p class="lede" style="margin-top:10px;font-size:14px">迴路增益 L &lt; 1 時，I<sub>Q</sub> 會收斂到一個比冷機時高（或低）的穩定值，放大倍數約 1／(1 − L)；L ≥ 1 時沒有穩定點，就是熱奔潰。補償過頭時 L 會變成負值，熱機後 I<sub>Q</sub> 反而下降，交越失真又回來了。
+        <span class="en">L &lt; 1 settles; L ≥ 1 runs away; negative L means over-compensation and the bias falls when hot.</span></p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-sim">
+    <h2 id="h-sim"><span class="step">3</span>開機熱模擬 <span class="en">Warm-up simulation (30 minutes)</span></h2>
+    <div class="opts">
+      <span class="lab">情境 Scenario</span>
+      <div class="seg wrap-ok" id="segScn" role="group" aria-label="Scenario">
+        <button type="button" data-v="good">良好設計</button><button type="button" data-v="pcb">感測管在 PCB 上</button><button type="button" data-v="runaway">無補償＋小 R<sub>e</sub>＋小散熱片</button><button type="button" data-v="over">補償過頭</button>
+      </div>
+      <span class="lab">訊號 Signal</span>
+      <div class="seg" id="segSig" role="group" aria-label="Signal level"><button type="button" data-v="0">待機 Idle</button><button type="button" data-v="8">1/8 功率</button><button type="button" data-v="3">1/3 功率</button></div>
+    </div>
+    <div class="params" id="paramsS"></div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="scroll-x"><svg class="wf-svg" id="svgT" viewBox="0 0 560 300" role="img" aria-label="Junction and heatsink temperature versus time"></svg></div>
+      <div class="scroll-x"><svg class="wf-svg" id="svgI" viewBox="0 0 560 300" role="img" aria-label="Quiescent current versus time"></svg></div>
+    </div>
+    <div class="legend" id="legS"></div>
+    <div class="bigres" id="bigS" style="margin-top:12px"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-hs">
+    <h2 id="h-hs"><span class="step">4</span>散熱片熱阻計算 <span class="en">Heatsink sizing</span></h2>
+    <div class="grid-2">
+      <div>
+        <div class="opts"><span class="lab">設計依據 Design point</span>
+          <div class="seg wrap-ok" id="segHs" role="group" aria-label="Design point"><button type="button" data-v="worst">正弦最壞點 2V/π</button><button type="button" data-v="eighth">1/8 功率（IEC 62368-1）</button><button type="button" data-v="third">1/3 功率</button></div></div>
+        <div class="params" id="paramsH"></div>
+        <div class="badges" id="badgesH" style="margin-top:12px"></div>
+        <div class="formulas" id="formH"></div>
+      </div>
+      <div class="scroll-x"><svg class="wf-svg" id="svgH" viewBox="0 0 560 320" role="img" aria-label="Output stage dissipation versus output power"></svg></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-notes">
+    <h2 id="h-notes"><span class="step">5</span>設計重點 <span class="en">Design notes</span></h2>
+    <div class="note-key"><span><span class="src pdf">原稿</span> 附件原稿內容</span><span><span class="src txt">教科書</span> 標準電路理論</span><span><span class="src ti">IEC／業界</span> 標準與業界資料</span><span><span class="src add">補充</span> Claude 補充、經驗值</span></div>
+    <div class="ngroups">
+      <div class="ngroup" style="--c:var(--accent)">
+        <h3>偏壓補償 <span class="en">Bias compensation</span></h3>
+        <ul>
+          <li><b>倍增器要裝在散熱片上</b><span class="src pdf">原稿</span><span class="src add">補充</span><br>原稿提到用二極體或 V<sub>be</sub> 倍增器設偏壓，並要做熱補償。倍增器的電晶體要和功率管熱耦合（同一片散熱片，最好貼近功率管或直接鎖在功率管外殼上），才看得到功率管的溫度。<span class="en">Mount the multiplier transistor on the heatsink, as close to the output devices as possible.</span></li>
+          <li><b>永遠追不上接面</b><span class="src add">補充</span><br>感測管量到的是散熱片溫度，功率管接面在 θ<sub>JC</sub>＋θ<sub>CS</sub> 的另一端、反應快好幾個數量級。大音量後接面瞬間變熱、散熱片還沒跟上，I<sub>Q</sub> 會短暫偏高；音樂停下來時接面先冷，I<sub>Q</sub> 又短暫偏低。這是 AB 類偏壓「記憶效應」的來源之一。<span class="en">The sensor sees the heatsink, not the junction; bias lags after loud passages.</span></li>
+          <li><b>調整用的可變電阻要接在安全側</b><span class="src add">補充</span><br>微調電阻放在 R2（B–E）並聯或 R1 串聯的位置，讓「可變電阻接觸不良開路」時偏壓變小而不是變大；開路變大會讓 I<sub>Q</sub> 瞬間暴衝。<span class="en">Arrange the trimmer so that a wiper failure lowers the bias.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--on)">
+        <h3>元件與熱阻 <span class="en">Devices and thermal path</span></h3>
+        <ul>
+          <li><b>R<sub>e</sub> 是第一道防線</b><span class="src txt">教科書</span><br>迴路增益分母是 R<sub>e</sub> + V<sub>T</sub>／I<sub>Q</sub>。R<sub>e</sub> 太小（為了省損耗）時，只能靠更好的熱補償與更大的散熱片撐住；R<sub>e</sub> = 0 幾乎一定失控。<span class="en">The loop-gain denominator is Re + VT/IQ.</span></li>
+          <li><b>MOSFET 也會熱奔潰</b><span class="src add">補充</span><br>垂直 MOSFET 在 ZTC 點以下的小電流區是正溫度係數，AB 類偏壓正好落在這一區，和 BJT 一樣需要補償；橫向 MOSFET 在偏壓電流下已是負溫度係數，熱穩定性較好。<span class="en">Vertical MOSFETs are positive-tempco below the ZTC point — exactly where AB bias sits.</span></li>
+          <li><b>絕緣墊常是最大的熱阻</b><span class="src add">補充</span><br>功率管外殼通常要和散熱片絕緣，絕緣墊加導熱膏的 θ<sub>CS</sub> 常在 0.2–1 °C/W，和 θ<sub>JC</sub> 同一個等級；鎖附扭力與平整度也會明顯影響。<span class="en">The insulating pad is often as large as θJC.</span></li>
+        </ul>
+      </div>
+      <div class="ngroup" style="--c:var(--ok)">
+        <h3>測試條件與手機 <span class="en">Test conditions and phones</span></h3>
+        <ul>
+          <li><b>1/8 功率粉紅雜訊</b><span class="src ti">IEC／業界</span><br>IEC 62368-1 的一般操作條件：先用 1 kHz 找出最大不削波功率，再用粉紅雜訊調到它的 1/8（約低 9 dB）量溫升，用來代表一般音樂。B 類在 1/8 功率時的損耗約 0.33·P<sub>max</sub>，已接近 0.405·P<sub>max</sub> 的最壞點。<span class="en">IEC 62368-1 uses pink noise at 1/8 of maximum unclipped power.</span></li>
+          <li><b>正弦最壞點</b><span class="src txt">教科書</span><br>推挽 B 類損耗在輸出峰值 2V/π 時最大，P<sub>D,max</sub> = 2V<sub>CC</sub>²／(π²·R<sub>L</sub>) ≈ 0.405·P<sub>max</sub>。專業音響、要承受連續正弦測試的產品，用這一點設計散熱片。<span class="en">Worst-case sine dissipation is 0.405 × Pmax at 2V/π.</span></li>
+          <li><b>手機的熱問題在別處</b><span class="src add">補充</span><br>手機 Smart PA 是 Class-D，晶片本身發熱小，但有過溫保護與熱降額（溫度高時自動降增益）；真正會燒的是喇叭音圈，所以要靠 IV sense 估音圈溫度（見 04 頁）。另外整機表面溫度（手握處）也會限制長時間外放的音量。<span class="en">In phones the hot spot is the voice coil, not the amplifier; see page 04.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+<!--#FOOTER-->
+模型：V<sub>be</sub> 溫度係數 −2 mV/°C、V<sub>T</sub> = 26 mV 固定；兩顆功率管共用一片散熱片，接面熱時間常數 3 秒、散熱片 4 分鐘（教學假設值）；偏壓在 25 °C 冷機時調到設定的 I<sub>Q</sub>；感測管溫度 = 環境 + 耦合係數 ×（散熱片 − 環境）；訊號損耗以推挽 B 類公式估算並加在 I<sub>Q</sub> 損耗上。1/8 功率粉紅雜訊依 IEC 62368-1 的做法（經業界資料確認）。頁面為教學模型，實際設計請以元件規格書與實測為準。
+<br>Teaching model: −2 mV/°C, VT fixed, shared heatsink, τj = 3 s, τhs = 4 min (assumed), bias trimmed cold at 25 °C. 1/8-power pink noise per IEC 62368-1 practice.
+<!--#SCRIPT-->
+glossary($('gloss'), ['V<sub>be</sub>','V<sub>be</sub> multiplier','I<sub>Q</sub>','R<sub>e</sub>','V<sub>T</sub>','T<sub>j</sub>','θ<sub>JC</sub>／θ<sub>CS</sub>／θ<sub>SA</sub>','ZTC','MOSFET','BJT','IEC 62368-1','Smart PA','IV sense']);
+const ALPHA = 0.002, VT = 0.026;
+const fmtRows = rows => rows.map(([n, e, r]) => `<div class="f-row"><div class="name">${n}</div><div class="eq">${e}</div><div class="res">${r}</div></div>`).join('');
+const badge = (ok, t) => `<span class="badge ${ok === true ? 'ok' : ok === false ? 'warn' : 'info'}">${t}</span>`;
+
+/* ---------- 1: Vbe multiplier ---------- */
+const M = {iq: 118, Re: 0.22, nvbe: 2, vbe: 0.62, R2: 1000};
+(function drawMult(){
+  const svg = $('svgMult');
+  // rails: top node (to Q1 base) and bottom node (to Q2 base)
+  svgEl('path', {d: 'M190 20 V60 M190 190 V230 M100 60 H190 M100 190 H190 M100 60 V75 M100 105 V145 M100 175 V190 M100 125 H168 M190 60 V102 M190 148 V190', class: 'wire'}, svg);
+  svgEl('rect', {x: 91, y: 75, width: 18, height: 30, class: 'term'}, svg);
+  svgEl('rect', {x: 91, y: 145, width: 18, height: 30, class: 'term'}, svg);
+  svgEl('path', {d: 'M170 105 V145', class: 'plate'}, svg);
+  svgEl('path', {d: 'M170 116 L190 102 M170 134 L190 148', class: 'wire'}, svg);
+  svgEl('path', {d: 'M182 140 L190 148 L179 147 Z', class: 'solid'}, svg);
+  svgEl('circle', {cx: 100, cy: 125, r: 3.5, class: 'node'}, svg);
+  svgEl('circle', {cx: 190, cy: 60, r: 3.5, class: 'node'}, svg); svgEl('circle', {cx: 190, cy: 190, r: 3.5, class: 'node'}, svg);
+  svgEl('text', {x: 70, y: 95, class: 'lbl'}, svg, 'R1');
+  svgEl('text', {x: 70, y: 165, class: 'lbl'}, svg, 'R2');
+  svgEl('text', {x: 200, y: 129, class: 'lbl-sm'}, svg, 'Q_m');
+  svgEl('text', {x: 198, y: 18, class: 'lbl-sm'}, svg, '→ Q1 基極');
+  svgEl('text', {x: 198, y: 244, class: 'lbl-sm'}, svg, '→ Q2 基極');
+  svgEl('rect', {x: 150, y: 88, width: 92, height: 74, rx: 6, fill: 'none', stroke: 'var(--warn)', 'stroke-dasharray': '5 4'}, svg);
+  svgEl('text', {x: 246, y: 158, class: 'lbl-sm', fill: 'var(--warn)'}, svg, '散熱片上');
+  svgEl('text', {x: 14, y: 129, class: 'read'}, svg, 'V_be,m');
+  svgEl('text', {x: 8, y: 244, class: 'read'}, svg, 'V_bias = V_be(1+R1/R2)');
+})();
+sliders([
+  {k: 'iq', zh: '目標 I<sub>Q</sub>', en: 'Target quiescent current', min: 10, max: 500, step: 1, fmt: v => v + ' mA'},
+  {k: 'Re', zh: '射極電阻 R<sub>e</sub>', en: 'Emitter resistor', min: 0.05, max: 0.47, step: 0.01, fmt: v => fx(v, 2) + ' Ω'},
+  {k: 'nvbe', zh: '偏壓路徑上的 V<sub>be</sub> 數', en: 'Junctions to bias (2 = EF pair, 4 = with drivers)', min: 2, max: 6, step: 1, fmt: v => v},
+  {k: 'R2', zh: 'R2（B–E）', en: 'Base-emitter resistor', min: 220, max: 4700, step: 10, fmt: v => eng(v, 'Ω')}
+], M, $('paramsM'), () => drawM());
+function drawM(){
+  const vb = M.nvbe * M.vbe + 2 * M.iq / 1000 * M.Re, ratio = vb / M.vbe, R1 = M.R2 * (ratio - 1);
+  $('formM').innerHTML = fmtRows([
+    ['需要的偏壓 Bias voltage', `V<sub>bias</sub> = n·V<sub>be</sub> + 2·I<sub>Q</sub>·R<sub>e</sub> = ${M.nvbe} × ${M.vbe} + 2 × ${M.iq} m × ${fx(M.Re, 2)}`, eng(vb, 'V')],
+    ['倍增倍數 Ratio', `V<sub>bias</sub> = V<sub>be,m</sub>·(1 + R1／R2) → 1 + R1／R2 = ${fx(vb, 3)}／${M.vbe}`, fx(ratio, 3)],
+    ['R1（C–B）', `R1 = R2·(倍數 − 1) = ${eng(M.R2, 'Ω')} × ${fx(ratio - 1, 3)}；標準值取 ${eng(nearestE(R1, E12), 'Ω')}，再串可變電阻微調`, eng(R1, 'Ω')],
+    ['倍增器溫度係數 Multiplier tempco', `−2 mV/°C × ${fx(ratio, 2)}（感測管溫度每升 1 °C）`, fx(-2 * ratio, 2) + ' mV/°C'],
+    ['功率管需要的補償 Needed', `−2 mV/°C × ${M.nvbe}（${M.nvbe} 個接面）；倍增器多出 ${fx((ratio / M.nvbe - 1) * 100, 1)}%，因為 2·I<sub>Q</sub>·R<sub>e</sub> 那一段也被一起倍增了`, fx(-2 * M.nvbe, 1) + ' mV/°C']
+  ]);
+}
+drawM();
+
+/* ---------- 2–3: thermal loop ---------- */
+const SCN = {
+  good: {Re: 0.22, k: 0.8, m: 2.0, sa: 1.0, iq0: 118},
+  pcb: {Re: 0.22, k: 0.15, m: 2.0, sa: 1.0, iq0: 118},
+  runaway: {Re: 0.1, k: 0, m: 0, sa: 2.5, iq0: 260},
+  over: {Re: 0.22, k: 1.0, m: 4.0, sa: 1.0, iq0: 118}
+};
+const S = Object.assign({Vcc: 35, RL: 8, jc: 0.8, cs: 0.4, Ta: 25, sig: 0}, SCN.good);
+const syncS = sliders([
+  {k: 'iq0', zh: '冷機 I<sub>Q</sub>（25 °C 調好）', en: 'Cold bias', min: 10, max: 400, step: 1, fmt: v => v + ' mA'},
+  {k: 'Re', zh: '射極電阻 R<sub>e</sub>', en: 'Emitter resistor', min: 0, max: 0.47, step: 0.01, fmt: v => fx(v, 2) + ' Ω'},
+  {k: 'm', zh: '倍增器補償量', en: 'Compensation (× Vbe tempco; 2 = two junctions)', min: 0, max: 4, step: 0.05, fmt: v => fx(v, 2) + '×'},
+  {k: 'k', zh: '感測管熱耦合', en: 'Sensor coupling to heatsink', min: 0, max: 1, step: 0.01, fmt: v => fx(v * 100, 0) + '%'},
+  {k: 'sa', zh: '散熱片 θ<sub>SA</sub>', en: 'Heatsink to air', min: 0.2, max: 4, step: 0.05, fmt: v => fx(v, 2) + ' °C/W'},
+  {k: 'Vcc', zh: '電源 ±V<sub>CC</sub>', en: 'Supply rails', min: 15, max: 60, step: 1, fmt: v => '±' + v + ' V'},
+  {k: 'jc', zh: 'θ<sub>JC</sub>（每顆）', en: 'Junction to case', min: 0.3, max: 2, step: 0.05, fmt: v => fx(v, 2) + ' °C/W'},
+  {k: 'cs', zh: 'θ<sub>CS</sub> 絕緣墊', en: 'Case to sink', min: 0.1, max: 1.2, step: 0.05, fmt: v => fx(v, 2) + ' °C/W'},
+  {k: 'Ta', zh: '環境溫度', en: 'Ambient', min: 15, max: 50, step: 1, fmt: v => v + ' °C'}
+], S, $('paramsS'), () => { setSeg('segScn', ''); drawSim(); });
+segGroup('segScn', v => { Object.assign(S, SCN[v]); syncS(); drawSim(); });
+segGroup('segSig', v => { S.sig = +v; drawSim(); });
+setSeg('segScn', 'good'); setSeg('segSig', '0');
+
+function sigLossPerDevice(){
+  if (!S.sig) return 0;
+  const Pmax = S.Vcc * S.Vcc / (2 * S.RL), Vp = Math.sqrt(2 * S.RL * Pmax / S.sig);
+  return (2 * S.Vcc * Vp / (Math.PI * S.RL) - Vp * Vp / (2 * S.RL)) / 2;
+}
+function solveIq(half, Tj){
+  const iq0 = S.iq0 / 1000;
+  let lo = -9, hi = 2.5;   // log10 amps
+  for (let n = 0; n < 60; n++){
+    const m = (lo + hi) / 2, I = Math.pow(10, m);
+    const f = VT * Math.log(I / iq0) - ALPHA * (Tj - 25) + I * S.Re - half;
+    if (f > 0) hi = m; else lo = m;
+  }
+  return Math.pow(10, (lo + hi) / 2);
+}
+function simulate(){
+  const iq0 = S.iq0 / 1000, half0 = iq0 * S.Re, tj_tau = 3, hs_tau = 240, dt = 0.1, tEnd = 1800;
+  const ps = sigLossPerDevice(), th_jh = S.jc + S.cs;
+  let Ths = S.Ta, Tj = S.Ta, out = [], runaway = null, Iq = iq0;
+  for (let t = 0; t <= tEnd; t += dt){
+    const Ts = S.Ta + S.k * (Ths - S.Ta);
+    const half = half0 - S.m / 2 * ALPHA * (Ts - 25);
+    Iq = solveIq(half, Tj);
+    const Pd = S.Vcc * Iq + ps;
+    Tj += ((Ths + Pd * th_jh) - Tj) / tj_tau * dt;
+    Ths += ((S.Ta + 2 * Pd * S.sa) - Ths) / hs_tau * dt;
+    if (Math.round(t / dt) % 20 === 0) out.push({t, Tj, Ths, Iq});
+    if (Tj > 175 || Iq > 20){ runaway = t; out.push({t, Tj, Ths, Iq}); break; }
+  }
+  return {out, runaway};
+}
+function loopGain(){
+  const iq = S.iq0 / 1000;
+  return ALPHA * S.Vcc * ((S.jc + S.cs) + 2 * S.sa * (1 - S.m / 2 * S.k)) / (S.Re + VT / iq);
+}
+function drawSim(){
+  const L = loopGain(), R = simulate(), last = R.out[R.out.length - 1];
+  const stable = L < 1 && !R.runaway;
+  $('badgesL').innerHTML = [badge(L < 1, L < 1 ? `L = ${fx(L, 2)} < 1 穩定` : `L = ${fx(L, 2)} ≥ 1 熱奔潰`), badge(null, L < 0 ? '補償過頭：熱機 I_Q 下降' : L < 0.5 ? '漂移小' : L < 1 ? '漂移明顯' : '失控')].join('');
+  $('bigL').innerHTML = `<div><span>迴路增益 L</span><b style="color:${L < 1 ? 'var(--ink)' : 'var(--warn)'}">${fx(L, 2)}</b></div><div><span>熱機 I<sub>Q</sub> ÷ 冷機 ≈ 1/(1−L)</span><b>${L < 1 ? fx(1 / (1 - L), 2) + '×' : '∞'}</b></div>`;
+  const thj = S.jc + S.cs;
+  $('formL').innerHTML = fmtRows([
+    ['迴路增益 Loop gain', `L = α·V<sub>CC</sub>·[θ<sub>JC</sub> + θ<sub>CS</sub> + 2·θ<sub>SA</sub>·(1 − m/2·k)] ／ (R<sub>e</sub> + V<sub>T</sub>／I<sub>Q</sub>)`, fx(L, 3)],
+    ['分子：溫度推高 V<sub>be</sub> 餘量', `2 mV × ${S.Vcc} × [${fx(thj, 2)} + 2 × ${fx(S.sa, 2)} × (1 − ${fx(S.m / 2, 2)} × ${fx(S.k, 2)})]`, fx(ALPHA * S.Vcc * (thj + 2 * S.sa * (1 - S.m / 2 * S.k)), 3) + ' V/A'],
+    ['分母：煞車 R<sub>e</sub> + r<sub>e</sub>', `${fx(S.Re, 2)} Ω + 26 mV／${S.iq0} mA`, fx(S.Re + VT / (S.iq0 / 1000), 3) + ' Ω']
+  ]);
+  // charts
+  const tmax = 1800, tt = [0, 300, 600, 900, 1200, 1500, 1800];
+  const svgT = $('svgT'); clear(svgT);
+  const yT = Math.max(160, Math.min(200, Math.max(...R.out.map(o => o.Tj)) + 10));
+  const CT = chart(svgT, {x0: 52, y0: 22, w: 490, h: 236, xr: [0, tmax], yr: [S.Ta - 5, yT], xticks: tt, xfmt: v => v / 60 + ' min', yticks: [25, 50, 75, 100, 125, 150, 175].filter(v => v < yT), yfmt: v => v + '°C', ylabel: '溫度 Temperature', xlabel: '時間 Time'});
+  CT.line([[0, 150], [tmax, 150]], {stroke: 'var(--warn)', 'stroke-dasharray': '6 4', 'stroke-width': 1.4});
+  svgEl('text', {x: 538, y: CT.Y(150) - 5, 'text-anchor': 'end', class: 'ref-lbl', fill: 'var(--warn)'}, CT.plot, 'T_j,max 150 °C');
+  CT.line(R.out.map(o => [o.t, o.Ths]), {stroke: 'var(--teal)', 'stroke-width': 2.4});
+  CT.line(R.out.map(o => [o.t, o.Tj]), {stroke: 'var(--on)', 'stroke-width': 2.8});
+  const svgI = $('svgI'); clear(svgI);
+  const imax = Math.max(...R.out.map(o => o.Iq)) * 1000, ytop = Math.min(Math.max(imax * 1.15, S.iq0 * 1.6), 3000);
+  const CI = chart(svgI, {x0: 58, y0: 22, w: 484, h: 236, xr: [0, tmax], yr: [0, ytop], xticks: tt, xfmt: v => v / 60 + ' min',
+    yticks: [0, ytop / 4, ytop / 2, ytop * 3 / 4, ytop].map(v => Math.round(v)), yfmt: v => v + ' mA', ylabel: '靜態電流 I_Q', xlabel: '時間 Time'});
+  CI.line([[0, S.iq0], [tmax, S.iq0]], {stroke: 'var(--muted)', 'stroke-dasharray': '5 4', 'stroke-width': 1.4});
+  CI.line(R.out.map(o => [o.t, o.Iq * 1000]), {stroke: 'var(--accent)', 'stroke-width': 2.8});
+  if (R.runaway !== null){
+    [CT, CI].forEach(C => { svgEl('line', {x1: C.X(R.runaway), x2: C.X(R.runaway), y1: 22, y2: 258, stroke: 'var(--warn)', 'stroke-width': 2}, C.plot); svgEl('text', {x: C.X(R.runaway) + 5, y: 40, class: 'ref-lbl', fill: 'var(--warn)'}, C.plot, '熱奔潰 ' + fx(R.runaway, 0) + ' s'); });
+  }
+  $('legS').innerHTML = [['var(--on)', '接面 T_j', 'solid'], ['var(--teal)', '散熱片 T_hs', 'solid'], ['var(--accent)', 'I_Q', 'solid'], ['var(--muted)', '冷機設定值', 'dashed']]
+    .map(([c, t, s]) => `<span><i style="border-top-style:${s};color:${c};border-color:${c}"></i>${t}</span>`).join('');
+  $('bigS').innerHTML = R.runaway !== null
+    ? `<div><span>結果</span><b style="color:var(--warn)">熱奔潰</b></div><div><span>發生時間</span><b>${fx(R.runaway, 0)} s</b></div><div><span>當時 I<sub>Q</sub></span><b>${eng(last.Iq, 'A')}</b></div>`
+    : `<div><span>30 分鐘後 I<sub>Q</sub></span><b>${eng(last.Iq, 'A')}</b></div><div><span>相對冷機</span><b>${fx(last.Iq * 1000 / S.iq0 * 100, 0)}%</b></div><div><span>T<sub>j</sub></span><b>${fx(last.Tj, 0)} °C</b></div><div><span>散熱片</span><b>${fx(last.Ths, 0)} °C</b></div>`;
+}
+drawSim();
+
+/* ---------- 4: heatsink ---------- */
+const H = {Vcc: 35, RL: 8, N: 1, iq: 118, jc: 0.8, cs: 0.4, Tj: 150, Ta: 40, pt: 'worst'};
+sliders([
+  {k: 'Vcc', zh: '電源 ±V<sub>CC</sub>', en: 'Supply rails', min: 15, max: 80, step: 1, fmt: v => '±' + v + ' V'},
+  {k: 'RL', zh: '喇叭 R<sub>L</sub>', en: 'Load', min: 2, max: 16, step: 0.5, fmt: v => v + ' Ω'},
+  {k: 'N', zh: '輸出管對數', en: 'Output pairs', min: 1, max: 6, step: 1, fmt: v => v + ' 對'},
+  {k: 'iq', zh: '靜態 I<sub>Q</sub>（總）', en: 'Quiescent current', min: 0, max: 500, step: 1, fmt: v => v + ' mA'},
+  {k: 'jc', zh: 'θ<sub>JC</sub>（每顆）', en: 'Junction to case', min: 0.3, max: 2, step: 0.05, fmt: v => fx(v, 2) + ' °C/W'},
+  {k: 'cs', zh: 'θ<sub>CS</sub>（每顆）', en: 'Case to sink', min: 0.1, max: 1.2, step: 0.05, fmt: v => fx(v, 2) + ' °C/W'},
+  {k: 'Tj', zh: 'T<sub>j</sub> 設計上限', en: 'Junction limit (with margin)', min: 100, max: 175, step: 5, fmt: v => v + ' °C'},
+  {k: 'Ta', zh: '機箱內環境', en: 'Ambient inside chassis', min: 25, max: 60, step: 1, fmt: v => v + ' °C'}
+], H, $('paramsH'), () => drawH(), 'h');
+segGroup('segHs', v => { H.pt = v; drawH(); }); setSeg('segHs', 'worst');
+const pdB = (Vp) => 2 * H.Vcc * Vp / (Math.PI * H.RL) - Vp * Vp / (2 * H.RL);
+function drawH(){
+  const Pmax = H.Vcc * H.Vcc / (2 * H.RL);
+  const Vp = H.pt === 'worst' ? 2 * H.Vcc / Math.PI : Math.sqrt(2 * H.RL * Pmax / (H.pt === 'eighth' ? 8 : 3));
+  const Po = Vp * Vp / (2 * H.RL), Pq = 2 * H.Vcc * H.iq / 1000, Ptot = pdB(Vp) + Pq, Pdev = Ptot / (2 * H.N);
+  const budget = H.Tj - H.Ta - Pdev * (H.jc + H.cs), sa = budget / Ptot;
+  $('badgesH').innerHTML = [badge(sa > 0, sa > 0 ? `需要 θ_SA ≤ ${fx(sa, 2)} °C/W` : '每顆管子本身的熱阻就超過上限：增加管子對數'), badge(sa > 0.3 || sa <= 0 ? null : false, sa > 0 && sa < 0.3 ? '需要強制風冷等級' : sa >= 1.5 ? '自然對流可行' : sa > 0 ? '大型散熱片或風扇' : '—')].join('');
+  $('formH').innerHTML = fmtRows([
+    ['最大輸出 Maximum output', `P<sub>max</sub> = V<sub>CC</sub>²／(2·R<sub>L</sub>)（忽略飽和壓降）`, eng(Pmax, 'W')],
+    ['設計點 Design point', `V<sub>p</sub> = ${eng(Vp, 'V')}，P<sub>out</sub> = ${eng(Po, 'W')}（${fx(Po / Pmax * 100, 1)}% P<sub>max</sub>）`, eng(Po, 'W')],
+    ['輸出級總損耗 Total dissipation', `P<sub>D</sub> = 2V<sub>CC</sub>·V<sub>p</sub>／(π·R<sub>L</sub>) − V<sub>p</sub>²／(2R<sub>L</sub>) + 2·V<sub>CC</sub>·I<sub>Q</sub> = ${eng(pdB(Vp), 'W')} + ${eng(Pq, 'W')}`, eng(Ptot, 'W')],
+    ['每顆管子 Per device', `P<sub>dev</sub> = P<sub>D</sub>／(2 × ${H.N})；接面比散熱片高 P<sub>dev</sub>·(θ<sub>JC</sub> + θ<sub>CS</sub>) = ${fx(Pdev * (H.jc + H.cs), 1)} °C`, eng(Pdev, 'W')],
+    ['散熱片熱阻 Required θ_SA', `θ<sub>SA</sub> ≤ [T<sub>j</sub> − T<sub>a</sub> − P<sub>dev</sub>·(θ<sub>JC</sub> + θ<sub>CS</sub>)]／P<sub>D</sub> = (${H.Tj} − ${H.Ta} − ${fx(Pdev * (H.jc + H.cs), 1)})／${fx(Ptot, 1)}`, sa > 0 ? fx(sa, 2) + ' °C/W' : '不可行']
+  ]);
+  const svg = $('svgH'); clear(svg);
+  const pts = [...Array(101).keys()].map(i => { const vp = H.Vcc * i / 100; return [vp * vp / (2 * H.RL), pdB(vp) + Pq]; });
+  const ymax = Math.max(...pts.map(p => p[1])) * 1.15;
+  const ch = chart(svg, {x0: 58, y0: 22, w: 484, h: 250, xr: [0, Pmax], yr: [0, ymax], xticks: [0, Pmax / 4, Pmax / 2, Pmax * 3 / 4, Pmax].map(v => +v.toPrecision(2)), xfmt: v => eng(v, 'W', 2),
+    yticks: [0, ymax / 4, ymax / 2, ymax * 3 / 4].map(v => +v.toPrecision(2)), yfmt: v => eng(v, 'W', 2), ylabel: '輸出級總損耗 P_D（正弦）', xlabel: '輸出功率 P_out'});
+  ch.line(pts, {stroke: 'var(--on)', 'stroke-width': 3});
+  [['worst', 2 * H.Vcc / Math.PI, '最壞 0.405·Pmax'], ['eighth', Math.sqrt(2 * H.RL * Pmax / 8), '1/8'], ['third', Math.sqrt(2 * H.RL * Pmax / 3), '1/3']].forEach(([k, vp, l]) => {
+    const x = vp * vp / (2 * H.RL), y = pdB(vp) + Pq;
+    svgEl('circle', {cx: ch.X(x), cy: ch.Y(y), r: k === H.pt ? 7 : 4.5, fill: k === H.pt ? 'var(--warn)' : 'var(--muted)'}, ch.plot);
+    svgEl('text', {x: ch.X(x) + 8, y: ch.Y(y) + (k === 'worst' ? -8 : 16), class: 'ref-lbl', fill: k === H.pt ? 'var(--warn)' : 'var(--muted)'}, ch.plot, l);
+  });
+}
+drawH();

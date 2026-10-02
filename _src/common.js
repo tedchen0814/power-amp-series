@@ -145,7 +145,12 @@ const GLOSS = {
   "EF":["Emitter Follower", "射極跟隨器：輸出取自射極，電壓增益約 1、電流增益大"],
   "CFP":["Complementary Feedback Pair (Sziklai)", "互補回授對：用一顆小訊號管＋一顆功率管組成的複合輸出管"],
   "NFB":["Negative Feedback", "負回授：把輸出拉回輸入比較，壓低失真"],
-  "Class-G":["Class-G (Rail Switching)", "依訊號大小在兩組電源軌之間切換的線性放大器"]
+  "Class-G":["Class-G (Rail Switching)", "依訊號大小在兩組電源軌之間切換的線性放大器"],
+  "θ<sub>JC</sub>／θ<sub>CS</sub>／θ<sub>SA</sub>":["Thermal Resistance: Junction-Case / Case-Sink / Sink-Ambient", "熱阻（°C/W）：晶片到外殼、外殼到散熱片（含絕緣墊）、散熱片到空氣"],
+  "T<sub>j</sub>":["Junction Temperature", "接面溫度：晶片內部溫度，常見上限 150 °C"],
+  "V<sub>be</sub> multiplier":["V<sub>be</sub> Multiplier (Amplified Diode)", "V<sub>be</sub> 倍增器：用一顆電晶體加兩顆電阻產生 V<sub>be</sub>·(1 + R1/R2) 的偏壓，並靠溫度追蹤做熱補償"],
+  "ZTC":["Zero Temperature Coefficient Point", "零溫度係數點：MOSFET 在這個閘極電壓（電流）以下是正溫度係數，以上是負溫度係數"],
+  "IEC 62368-1":["IEC 62368-1 Audio/Video, ICT Equipment Safety", "影音與資通訊設備安全標準，音響溫升測試用 1/8 最大不削波功率的粉紅雜訊"]
 };
 function glossary(box, keys){
   box.innerHTML = '<div class="scroll-x"><table class="gloss"><thead><tr><th>縮寫</th><th>完整英文名稱</th><th>中文意思與說明</th></tr></thead><tbody>' +
