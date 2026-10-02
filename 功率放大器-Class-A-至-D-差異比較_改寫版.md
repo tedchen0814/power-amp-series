@@ -199,6 +199,17 @@ Class-D 的 EMI 主要來自：
 - **RC Snubber**〔補充〕：f_ring = 1／(2π√(L_p·C_oss))，R ≈ √(L_p／C_oss)，C ≈ 4·C_oss，P = C·V²·f_sw。例：2 nH、200 pF → 252 MHz、3.3 Ω、820 pF、11 V／384 kHz 時 37 mW；可和原稿 1–4.7 Ω＋100–470 pF 對照。實測法：加電容讓振鈴頻率減半，寄生 C = C_add／3。
 - **手機 Smart PA**〔補充〕：升壓轉換器有自己的熱迴路；IV sense 以 Kelvin 差動拉線；放大器與喇叭線遠離天線，避免諧波落在 LTE／Wi-Fi／GNSS 頻段造成 desense；喇叭接點加 ESD；單點接地 vs 完整地平面以晶片規格書為準。
 
+## 七之二、射頻功率放大器（補充，對應 07 頁）
+
+- **RF 與音響的差別**：RF 負載窄頻（50 Ω 天線經匹配），可用諧振槽與諧波終端整形波形；效率看 PAE = (P_out − P_in)／P_DC（增益 10 dB 時 PAE 是汲極效率的 90%）；線性度看 ACLR、EVM。
+- **Class E**〔教科書，Sokal〕：R = 0.5768·V_DD²／P、C_shunt = 0.1836／(ωR)、X_series = 1.1525·R，峰值電壓 3.56·V_DD、峰值電流 2.86·I_DC，ZVS（導通瞬間電壓與斜率為零）。Claude 推導的 ZVS 條件：p·sinφ = −1、p·cosφ = π/2 → p = √(1 + π²/4) = 1.862、φ = −32.5°。
+- **Class F 最大平坦波形**〔Claude 推導，依 Raab 的諧波分析〕：電壓 3 次 1 − (9/8)cos θ + (1/8)cos 3θ；5 次 1 − (75/64)cos θ + (25/128)cos 3θ − (3/128)cos 5θ；電流 2 次 1 + (4/3)cos θ + (1/3)cos 2θ。η = V1·I1／2：只有基波 50%、3 次＋2 次 75%、方波＋半正弦 100%；峰值電壓 2·V_DD。
+- **負載線與匹配**〔教科書，Cripps〕：R_opt = (V_DD − V_knee)²／(2P)。手機 3.4 V、V_knee 0.3 V、30 dBm（1 W）→ 4.81 Ω，與 50 Ω 轉換比 10.4:1；L 型 Q = √(R_high／R_low − 1) = 3.07，1.9 GHz 時串聯 1.23 nH、並聯 5.14 pF；改兩段匹配（中間 15.5 Ω）每段 Q 1.49。
+- **回退效率**：理想對稱 Doherty η = (π/2)·x（x ≤ 0.5）、(π/2)·x²／(3x − 1)（x > 0.5）〔教科書〕。以截斷瑞利包絡計算平均效率（ET 調變器 85%、最低電源 20%、餘裕 5% 為假設值）：PAPR 6 dB 時 A 類 12.3%、B 類 43.9%、Doherty 66.9%、ET 61.2%；PAPR 9 dB 時 B 類 31.5%、Doherty 57.5%、ET 59.1%；定包絡時 ET 反而不划算（調變器損耗）。手機多用 APT／ET（Doherty 難做寬頻多頻段），基地台多用 Doherty〔補充〕。
+- **壓縮與 DPD**：Rapp AM/AM 模型（p = 2、P_sat 33 dBm）P1dB 約 30.9 dBm；無 DPD 時 6 dB PAPR 平均功率上限約 24.9 dBm，理想 DPD 可到 27 dBm〔教學估算〕。
+- **3GPP（TS 36.101，經 iTecSpec 等確認）**：Power Class 3 23 dBm ±2 dB；HPUE Power Class 2 26 dBm（如 Band 41，P-max ≤ 23 dBm 時改用 PC3 要求）；EVM QPSK 17.5%、16QAM 12.5%、64QAM 8%、256QAM 3.5%；E-UTRA ACLR 30 dB（PC2 31 dB）、UTRA ACLR1 33 dB。
+- **手機前端**〔補充〕：收發器（調變、DPD、ET 包絡）→ GaAs HBT PA 模組（2–3 級＋CMOS／SOI 控制）←（APT DC-DC 或 ET 調變器）→ SAW／BAW 雙工器 → 天線開關 → 調諧器 → 天線。
+
 ## 八、選型總結
 
 - 追求**純淨線性度與極致諧波失真**、散熱與功耗無限制：Class-A 或 Class-AB。〔原稿〕
@@ -215,5 +226,4 @@ Class-D 的 EMI 主要來自：
 
 ## 後續規劃（互動教學系列）
 
-- 已上線：首頁、01 導通角與效率、02 A／B／AB 線性輸出級、03 熱設計與熱奔潰、04 Class-D 開關放大、05 輸出濾波器設計、06 PCB 佈線與 EMI。
-- 規劃中：07 射頻功率放大器（Class C／E／F、完整 RF PA 內容）。
+- 七頁全部上線（2026-10-02）：首頁、01 導通角與效率、02 A／B／AB 線性輸出級、03 熱設計與熱奔潰、04 Class-D 開關放大、05 輸出濾波器設計、06 PCB 佈線與 EMI、07 射頻功率放大器。網址 https://power-amp-series.vercel.app/

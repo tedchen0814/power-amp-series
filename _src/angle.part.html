@@ -88,9 +88,9 @@ Conduction angle · why A, AB, B, C trade linearity for efficiency
           <tr><td><b>A</b></td><td>線性，偏壓在負載線中央</td><td class="m">360°</td><td class="m">25%（電阻負載）<br>50%（電感／變壓器耦合）</td><td>沒有訊號也全額耗電</td><td>Hi-Fi 發燒機、小訊號驅動級、RF 前級驅動</td><td>耳機放大器的前級才有，功率級不會用</td></tr>
           <tr><td><b>B</b></td><td>線性推挽，各管負責半週</td><td class="m">180°</td><td class="m">78.5%（π/4）</td><td>交越失真</td><td>單獨使用很少</td><td>—</td></tr>
           <tr><td><b>AB</b></td><td>推挽加小偏壓</td><td class="m">180°–360°</td><td class="m">介於 50%–78.5%</td><td>偏壓熱穩定、散熱</td><td>家用與專業音響、耳機放大器</td><td>耳機孔／有線耳機輸出常見（毫瓦級）</td></tr>
-          <tr><td><b>C</b></td><td>線性元件但大部分時間截止，靠諧振槽還原正弦</td><td class="m">&lt; 180°</td><td class="m">→ 100%（θ → 0）</td><td>輸出功率趨近零、只能放大定振幅訊號</td><td>FM 發射機、RF 振盪器</td><td>—（07 RF 頁會完整說明）</td></tr>
+          <tr><td><b>C</b></td><td>線性元件但大部分時間截止，靠諧振槽還原正弦</td><td class="m">&lt; 180°</td><td class="m">→ 100%（θ → 0）</td><td>輸出功率趨近零、只能放大定振幅訊號</td><td>FM 發射機、RF 振盪器</td><td>—（見 <a href="rf-pa.html">07 RF 頁</a>）</td></tr>
           <tr><td><b>D</b></td><td>開關：PWM 調變，全開／全關</td><td class="m">—</td><td class="m">實務 85%–95%</td><td>EMI、輸出濾波、死區時間</td><td>手機、筆電、藍牙喇叭、車用、重低音</td><td><b>手機喇叭的標準解</b>（Smart PA）</td></tr>
-          <tr><td><b>E／F</b></td><td>RF 開關放大器，以負載網路整形電壓電流</td><td class="m">—</td><td class="m">理論 100%</td><td>只適合窄頻、定包絡</td><td>RF 發射、無線充電</td><td>手機 RF PA 的研究方向（07 頁）</td></tr>
+          <tr><td><b>E／F</b></td><td>RF 開關放大器，以負載網路整形電壓電流</td><td class="m">—</td><td class="m">理論 100%</td><td>只適合窄頻、定包絡</td><td>RF 發射、無線充電</td><td>定包絡的 GSM 可用；LTE／5G 改用線性 PA 加包絡追蹤（見 <a href="rf-pa.html">07 頁</a>）</td></tr>
           <tr><td><b>G／H</b></td><td>電源軌跟著訊號大小切換（G）或連續追蹤（H）</td><td class="m">—</td><td class="m">比 AB 高</td><td>電源設計較複雜</td><td>高階音響；H 類也用在 Smart PA 的升壓電源</td><td>Smart PA 的升壓電壓隨音量變化就是 Class-H</td></tr>
         </tbody>
       </table>
@@ -114,7 +114,7 @@ Conduction angle · why A, AB, B, C trade linearity for efficiency
         <ul>
           <li><b>為什麼音響要推挽</b><span class="src txt">教科書</span><br>喇叭是寬頻負載，沒有諧振槽可以把半個正弦「補回來」，所以要用兩顆管子各負責半週，再相減成完整波形。<span class="en">Audio loads are broadband — no tank to restore the sine, so two devices share the cycle.</span></li>
           <li><b>交越失真從哪裡來</b><span class="src pdf">原稿</span><br>BJT 約 0.6–0.7 V、MOSFET 約 1–2 V 才開始導通。沒有偏壓時兩管在 0 V 附近同時截止，等於導通角小於 180°，輸出出現死區（切到「推挽」、θ 設 160° 就看得到）。小訊號時死區佔的比例更大，所以交越失真在小音量時特別明顯。<span class="en">Without bias the dead zone shows up around zero, and it hurts most at low volume.</span></li>
-          <li><b>這裡用的是理想折線元件</b><span class="src add">補充</span><br>本頁的電晶體假設「過門檻後電流和電壓成正比」，所以 θ = 180° 剛好無失真。實際元件的轉導在門檻附近是漸變的，B 類仍有交越失真，偏壓與失真的細節會放在 02 頁（規劃中）。<span class="en">Ideal piecewise-linear devices; real devices turn on gradually — see page 02 (planned).</span></li>
+          <li><b>這裡用的是理想折線元件</b><span class="src add">補充</span><br>本頁的電晶體假設「過門檻後電流和電壓成正比」，所以 θ = 180° 剛好無失真。實際元件的轉導在門檻附近是漸變的，B 類仍有交越失真，偏壓與失真的細節見 <a href="linear-stage.html">02 頁</a>。<span class="en">Ideal piecewise-linear devices; real devices turn on gradually — see page 02.</span></li>
         </ul>
       </div>
       <div class="ngroup" style="--c:var(--ok)">

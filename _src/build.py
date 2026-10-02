@@ -18,9 +18,9 @@ SERIES = [  # (key, number, nav name, zh, single-file stem, site file)
     ("classd", "04", "CLASS-D", "開關放大原理", "04-CLASSD", "class-d.html"),
     ("filter", "05", "OUTPUT FILTER", "輸出濾波器設計", "05-FILTER", "output-filter.html"),
     ("layout", "06", "LAYOUT · EMI", "PCB 佈線與 EMI", "06-LAYOUT", "layout-emi.html"),
+    ("rf", "07", "RF PA", "射頻功率放大器", "07-RF", "rf-pa.html"),
 ]
 SOON = [  # planned pages, shown greyed out in the nav
-    ("07", "RF PA", "射頻功率放大器"),
 ]
 EXTERNAL = [
     ("https://dcdc-topology-series.vercel.app/", "↗ DC-DC", "拓撲系列"),

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>射頻功率放大器 · 功率放大器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/series.css">
+<style>
+.wf-svg{width:100%;height:auto;display:block;min-width:520px}
+.opts{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:10px}
+.opts .lab{font-weight:700;color:var(--muted);font-size:13.5px}
+.flow-line{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;font-weight:700;font-size:13.5px;margin-bottom:12px}
+.flow-line span{border:1.5px solid var(--line);border-radius:8px;padding:5px 10px;background:var(--paper-2);display:flex;flex-direction:column;justify-content:center}
+.flow-line span small{font-weight:500;color:var(--muted);font-size:11.5px}
+.flow-line i{font-style:normal;color:var(--muted);align-self:center}
+.lvl-bars .bar-row{grid-template-columns:minmax(120px,200px) minmax(0,1fr) 72px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><a href="conduction-angle.html"><b>01 CONDUCTION ANGLE</b>導通角與效率</a><a href="linear-stage.html"><b>02 LINEAR STAGE</b>A／B／AB 輸出級</a><a href="thermal.html"><b>03 THERMAL</b>熱設計與熱奔潰</a><a href="class-d.html"><b>04 CLASS-D</b>開關放大原理</a><a href="output-filter.html"><b>05 OUTPUT FILTER</b>輸出濾波器設計</a><a href="layout-emi.html"><b>06 LAYOUT · EMI</b>PCB 佈線與 EMI</a><span class="cur" aria-current="page"><b>07 RF PA</b>射頻功率放大器</span><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a></nav>
+<header>
+<div>
+<div class="eyebrow">Power Amplifier Series · 07</div>
+<h1>射頻功率放大器<small>RF PA · Class C, E, F · load line · Doherty, envelope tracking, DPD · the phone front end</small></h1>
+</div>
+<div class="chip-dc">P<sub>out</sub> <span>·</span> PAE <span>·</span> ACLR</div>
+<p class="lede">射頻 PA 和音響 PA 用的是同一套分類，但工作環境完全不同：負載是<b>窄頻的諧振網路與天線</b>，可以用諧振槽、諧波終端把波形「整形」到幾乎沒有電壓電流重疊（Class C、E、F）；手機 PA 只有 3–4 V 電源卻要送出約 1 W，必須用<b>匹配網路</b>把 50 Ω 轉成幾歐姆；而 LTE／5G 的 OFDM 訊號峰均比高，PA 大部分時間在<b>回退功率</b>工作，效率要靠 <b>Doherty、包絡追蹤（ET）</b>救回來，線性度再交給 <b>DPD</b>。這一頁從波形一路走到手機 RF 前端。
+<span class="en">Same classes, different world: narrowband loads let tanks and harmonic terminations shape the waveforms; a 3–4 V phone PA must transform 50 Ω down to a few ohms; and high-PAPR OFDM keeps the PA in back-off, where Doherty, envelope tracking and DPD come in.</span></p>
+</header>
+<section class="panel" aria-labelledby="h-gloss">
+<h2 id="h-gloss"><span class="step">A–Z</span>縮寫對照 <span class="en">Abbreviations used on this page</span></h2>
+<details class="glossbox"><summary>展開／收合 Show / hide</summary><div id="gloss"></div></details>
+</section>
+<section class="panel" aria-labelledby="h-cmp">
+<h2 id="h-cmp"><span class="step">0</span>RF PA 和音響 PA 差在哪 <span class="en">RF vs audio power amplifiers</span></h2>
+<div class="scroll-x">
+<table class="tbl">
+<thead><tr><th>項目</th><th>音響 PA（01–06 頁）</th><th>RF PA（本頁）</th></tr></thead>
+<tbody>
+<tr><td>頻寬</td><td>20 Hz–20 kHz，十個倍頻程</td><td>載波 0.7–6 GHz，相對頻寬通常只有幾 %</td></tr>
+<tr><td>負載</td><td>喇叭（寬頻、非純電阻）</td><td>50 Ω 天線系統，經匹配網路轉成 R<sub>opt</sub></td></tr>
+<tr><td>波形整形</td><td>不行：寬頻負載不能濾掉諧波，C 類、E 類不能用</td><td>可以：諧振槽與諧波終端把波形整形，C／E／F 類可用</td></tr>
+<tr><td>效率指標</td><td>η = P<sub>out</sub>／P<sub>DC</sub></td><td><b>PAE</b> = (P<sub>out</sub> − P<sub>in</sub>)／P<sub>DC</sub>，因為 RF 增益只有 10–30 dB，輸入功率不能忽略</td></tr>
+<tr><td>線性度指標</td><td>THD+N</td><td><b>ACLR</b>（鄰道洩漏）、<b>EVM</b>（星座誤差）</td></tr>
+<tr><td>提高回退效率</td><td>Class-D、Class-G／H</td><td>Doherty、包絡追蹤（ET）、APT</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<div class="grid-2">
+<section class="panel" aria-labelledby="h-wave">
+<h2 id="h-wave"><span class="step">1</span>波形整形：把 v·i 重疊拿掉 <span class="en">Shaping the waveforms to remove v·i overlap</span></h2>
+<div class="opts">
+<div class="seg wrap-ok" id="segCls" role="group" aria-label="Class"><button type="button" data-v="A">A</button><button type="button" data-v="AB">AB</button><button type="button" data-v="B">B</button><button type="button" data-v="C">C</button><button type="button" data-v="E">E</button><button type="button" data-v="F">F</button></div>
+</div>
+<div id="optRCA" class="params"></div>
+<div id="optF" class="opts" hidden>
+<span class="lab">電壓諧波 Voltage</span>
+<div class="seg" id="segFv" role="group" aria-label="Voltage harmonics"><button type="button" data-v="1">只有基波</button><button type="button" data-v="3">＋3 次</button><button type="button" data-v="5">＋3、5 次</button><button type="button" data-v="inf">方波 ∞</button></div>
+<span class="lab">電流諧波 Current</span>
+<div class="seg" id="segFi" role="group" aria-label="Current harmonics"><button type="button" data-v="1">只有基波</button><button type="button" data-v="2">＋2 次</button><button type="button" data-v="inf">半正弦 ∞</button></div>
+</div>
+<div class="scroll-x" style="margin-top:8px"><svg class="wf-svg" id="svgW" viewBox="0 0 560 330" role="img" aria-label="Drain voltage and current waveforms"></svg></div>
+<div class="legend" id="legW"></div>
+</section>
+<section class="panel" aria-labelledby="h-wres">
+<h2 id="h-wres"><span class="step">2</span>效率與元件應力 <span class="en">Efficiency and device stress</span></h2>
+<div class="bigres" id="bigW"></div>
+<div class="infobox" id="infoW"></div>
+<div class="formulas" id="formW" style="margin-top:12px"></div>
+</section>
+</div>
+<section class="panel" aria-labelledby="h-match">
+<h2 id="h-match"><span class="step">3</span>負載線與匹配：為什麼手機 PA 要把 50 Ω 變成幾歐姆 <span class="en">Load line and L-match</span></h2>
+<div class="grid-2">
+<div>
+<div class="params" id="paramsM"></div>
+<div class="presets" id="presetsM"><span>範例 Presets：</span><button type="button" data-p="phone">手機 LTE 1.9 GHz</button><button type="button" data-p="hpue">HPUE 2.6 GHz</button><button type="button" data-p="bts">基地台 GaN 48 V</button></div>
+<div class="bigres" id="bigM" style="margin-top:12px"></div>
+</div>
+<div class="formulas" id="formM"></div>
+</div>
+</section>
+<section class="panel" aria-labelledby="h-bo">
+<h2 id="h-bo"><span class="step">4</span>回退效率：Doherty 與包絡追蹤 <span class="en">Back-off efficiency: Doherty and envelope tracking</span></h2>
+<div class="opts">
+<span class="lab">訊號 Signal</span>
+<div class="seg wrap-ok" id="segSig" role="group" aria-label="Signal"><button type="button" data-v="0">定包絡 GSM 0 dB</button><button type="button" data-v="3.5">WCDMA ≈ 3.5 dB</button><button type="button" data-v="6">LTE 上行 ≈ 6 dB</button><button type="button" data-v="9">OFDM ≈ 9 dB</button></div>
+</div>
+<div class="params" id="paramsB"></div>
+<div class="grid-2" style="margin-top:12px">
+<div class="scroll-x"><svg class="wf-svg" id="svgB" viewBox="0 0 560 320" role="img" aria-label="Efficiency versus output back-off with envelope distribution"></svg></div>
+<div>
+<h3 style="margin:0 0 8px;font-size:15px">平均效率（依包絡分布加權） <span class="en" style="display:inline">Average efficiency over the signal</span></h3>
+<div class="bars lvl-bars" id="barsB"></div>
+<div class="formulas" id="formB" style="margin-top:12px"></div>
+</div>
+</div>
+<div class="legend" id="legB"></div>
+</section>
+<section class="panel" aria-labelledby="h-dpd">
+<h2 id="h-dpd"><span class="step">5</span>壓縮與數位預失真 <span class="en">Compression and DPD (Rapp AM/AM model)</span></h2>
+<div class="grid-2">
+<div>
+<div class="params" id="paramsD"></div>
+<div class="bigres" id="bigD" style="margin-top:12px"></div>
+<p class="lede" style="font-size:14px">PA 接近飽和時增益慢慢掉（AM/AM 壓縮），峰值被壓扁，頻譜長出鄰道洩漏、ACLR 變差。不做線性化時，只能把平均功率從飽和點往下退好幾 dB，效率跟著掉；DPD 在基頻先把訊號「反向放大」，讓 PA＋DPD 一路線性到飽和，就能少退一點。實際的 PA 還有 AM/PM（相位隨振幅變）與記憶效應，DPD 也要一起修。
+<span class="en">Without linearisation the PA must back off from saturation; DPD pre-expands the signal so PA + DPD stays linear up to Psat.</span></p>
+</div>
+<div class="scroll-x"><svg class="wf-svg" id="svgD" viewBox="0 0 560 320" role="img" aria-label="Output versus input power with and without DPD"></svg></div>
+</div>
+<div class="legend" id="legD"></div>
+</section>
+<section class="panel" aria-labelledby="h-fe">
+<h2 id="h-fe"><span class="step">6</span>手機 RF 前端 <span class="en">The phone RF front end</span></h2>
+<div class="flow-line">
+<span>RF 收發器<small>調變、DPD、ET 包絡</small></span><i>→</i><span>PA 模組<small>GaAs HBT 2–3 級＋CMOS／SOI 控制</small></span><i>←</i><span>電源<small>APT DC-DC 或 ET 調變器</small></span><i>→</i><span>雙工器／濾波器<small>SAW／BAW</small></span><i>→</i><span>天線開關<small>多頻段切換</small></span><i>→</i><span>天線調諧器<small>Tuner</small></span><i>→</i><span>天線<small>23 dBm（PC3）</small></span>
+</div>
+<div class="scroll-x">
+<table class="tbl">
+<thead><tr><th>規格</th><th class="m">數值</th><th>意義</th><th>來源</th></tr></thead>
+<tbody>
+<tr><td>LTE 最大輸出 Power Class 3</td><td class="m">23 dBm ± 2 dB</td><td>天線端約 200 mW；PA 輸出還要再加前端損耗（濾波器、開關）</td><td><span class="src ti">3GPP</span> TS 36.101</td></tr>
+<tr><td>HPUE Power Class 2</td><td class="m">26 dBm</td><td>例如 Band 41；網路指示 P-max ≤ 23 dBm 時改用 PC3 要求</td><td><span class="src ti">3GPP</span> TS 36.101</td></tr>
+<tr><td>EVM 上限</td><td class="m">QPSK 17.5% · 16QAM 12.5% · 64QAM 8% · 256QAM 3.5%</td><td>調變階數越高，PA 越要線性</td><td><span class="src ti">3GPP</span> TS 36.101</td></tr>
+<tr><td>E-UTRA ACLR</td><td class="m">30 dB（PC2 為 31 dB）</td><td>本通道比相鄰 LTE 通道的洩漏高多少</td><td><span class="src ti">3GPP</span> TS 36.101</td></tr>
+<tr><td>UTRA ACLR1</td><td class="m">33 dB</td><td>對相鄰 WCDMA 通道的洩漏</td><td><span class="src ti">3GPP</span> TS 36.101</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<section class="panel" aria-labelledby="h-notes">
+<h2 id="h-notes"><span class="step">7</span>重點 <span class="en">Key points</span></h2>
+<div class="note-key"><span><span class="src txt">教科書</span> 經典 RF PA 理論（Cripps、Sokal、Raab）</span><span><span class="src ti">3GPP</span> 標準</span><span><span class="src add">補充</span> Claude 補充、經驗值</span></div>
+<div class="ngroups">
+<div class="ngroup" style="--c:var(--accent)">
+<h3>開關型 RF PA <span class="en">Switching-mode PAs</span></h3>
+<ul>
+<li><b>Class E 設計式</b><span class="src txt">教科書</span><br>Sokal 的理想 Class E（50% 佔空比、Q 無限大）：R = 0.5768·V<sub>DD</sub>²／P、並聯電容 C = 0.1836／(ωR)、串聯多出的電抗 X = 1.1525·R；峰值電壓 3.56·V<sub>DD</sub>、峰值電流 2.86·I<sub>DC</sub>。開關導通瞬間電壓與其斜率都為零（ZVS），所以並聯電容的能量不會被燒掉。<span class="en">Sokal's ideal class-E design equations.</span></li>
+<li><b>應力是代價</b><span class="src txt">教科書</span><br>Class E 的 3.56 倍、Class F 的 2 倍電源電壓都要落在元件崩潰電壓以內；這也是 GaN（耐壓高）適合高效率開關型 PA 的原因。<span class="en">Peak voltage must stay below breakdown — GaN helps.</span></li>
+<li><b>只能放大定包絡訊號</b><span class="src txt">教科書</span><br>C／E／F 類的輸出振幅幾乎不隨輸入改變，只能用在 GSM 這類定包絡調變，或用「極座標調變」把振幅放到電源上（包絡追蹤的極端版）。<span class="en">Switching PAs only pass constant-envelope signals unless amplitude goes through the supply.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--on)">
+<h3>回退效率 <span class="en">Back-off efficiency</span></h3>
+<ul>
+<li><b>Doherty 的兩個效率峰</b><span class="src txt">教科書</span><br>對稱 Doherty（兩個 B 類）在滿功率與 −6 dB 回退時都達 π/4，中間略低。原理是峰值放大器開始導通後，經 λ/4 線把主放大器看到的負載往下拉（負載調變）。<span class="en">Symmetric Doherty peaks at full power and at 6 dB back-off.</span></li>
+<li><b>手機多用 ET／APT</b><span class="src add">補充</span><br>基地台 PA 幾乎都用 Doherty；手機 PA 要涵蓋很多頻段，λ/4 網路做不寬，所以主流是讓 DC-DC 調整 PA 電源：APT 依每個時槽的平均功率調整、ET 即時跟著包絡。ET 調變器通常是「快速線性放大器＋開關式 Buck」的混合架構，頻寬要涵蓋訊號頻寬，寬頻 5G 時越來越難做。<span class="en">Phones mostly use APT/ET; Doherty is hard to make wideband across many bands.</span></li>
+<li><b>模型假設</b><span class="src add">補充</span><br>第 4 段以理想 B 類為基礎；ET 調變器效率、電源最低電壓與餘裕是教學假設值；包絡分布用瑞利分布並在峰值截斷，GSM 視為定包絡。PAPR 數值為約略值，實際依頻寬、資源配置與削峰而異。<span class="en">Teaching assumptions; PAPR values are approximate.</span></li>
+</ul>
+</div>
+<div class="ngroup" style="--c:var(--ok)">
+<h3>匹配與線性化 <span class="en">Matching and linearisation</span></h3>
+<ul>
+<li><b>負載線</b><span class="src txt">教科書</span><br>R<sub>opt</sub> = (V<sub>DD</sub> − V<sub>knee</sub>)²／(2·P<sub>out</sub>)（Cripps 負載線）。3.4 V 要送 1 W 只能用約 4.8 Ω，所以手機 PA 的輸出匹配是 10:1 左右的阻抗轉換；轉換比越大，Q 越高、頻寬越窄、匹配損耗越大，常用兩段以上匹配或整合在模組內。<span class="en">A 3.4 V, 1 W PA needs about 4.8 Ω — a 10:1 transformation.</span></li>
+<li><b>PAE 而不是 η</b><span class="src txt">教科書</span><br>RF PA 增益只有 10–30 dB，輸入功率不小：增益 10 dB 時 PAE 只有汲極效率的 90%。手機 PA 模組通常 2–3 級串接，最後一級決定效率、前級提供增益。<span class="en">With 10 dB gain, PAE is 90 % of drain efficiency.</span></li>
+<li><b>DPD 在手機的限制</b><span class="src add">補充</span><br>DPD 需要觀測接收路徑與運算功率；手機的功率預算有限，所以常是 ET＋較簡單的 DPD 或查表補償，基地台則是完整的記憶型 DPD。<span class="en">Phones use lighter DPD than base stations.</span></li>
+</ul>
+</div>
+</div>
+</section>
+<footer>
+依據：降導通角與負載線分析依 S. Cripps《RF Power Amplifiers for Wireless Communications》；Class E 設計式依 N. Sokal（經網路資料確認 3.56·V<sub>DD</sub>、0.1836／(ωR)、1.1525·R）；Class F 最大平坦波形依 F. Raab 的諧波分析（由 Claude 推導係數）；Doherty 效率為理想對稱 B 類模型；3GPP 數值取自 TS 36.101（經 iTecSpec 等資料確認）。ET 調變器效率 85%、最低電源 20%、餘裕 5%、Rapp 模型參數皆為教學假設值。
+<br>Cripps (load line, conduction angle), Sokal (class E), Raab (class F), ideal symmetric Doherty, 3GPP TS 36.101 values. ET and Rapp parameters are teaching assumptions.
+</footer>
+</div>
+<script src="assets/common.js"></script>
+<script>
+glossary($('gloss'), ['RF','PA','dBm','PAE','R<sub>opt</sub>','V<sub>knee</sub>','ZVS','PAPR','OFDM','Doherty','ET／APT','DPD','AM/AM／AM/PM','P1dB','ACLR','EVM','HBT','GaAs／GaN','UE／HPUE']);
+const TAU = 2 * Math.PI;
+const fmtRows = rows => rows.map(([n, e, r]) => `<div class="f-row"><div class="name">${n}</div><div class="eq">${e}</div><div class="res">${r}</div></div>`).join('');
+const dbm = w => 10 * Math.log10(w * 1000);
+/* ---------- 1–2: waveform explorer (normalised: V_DD = 1, I_DC = 1) ---------- */
+const W = {cls: 'AB', th: 230, fv: '3', fi: '2'};
+sliders([{k: 'th', zh: '導通角 θ', en: 'Conduction angle', min: 40, max: 360, step: 1, fmt: v => v + '°'}], W, $('optRCA'), () => drawW());
+segGroup('segCls', v => { W.cls = v; if (v === 'A') W.th = 360; if (v === 'B') W.th = 180; if (v === 'AB' && (W.th <= 180 || W.th >= 360)) W.th = 230; if (v === 'C' && W.th >= 180) W.th = 120; $('p_th').value = W.th; $('o_th').textContent = W.th + '°'; drawW(); });
+segGroup('segFv', v => { W.fv = v; drawW(); }); segGroup('segFi', v => { W.fi = v; drawW(); });
+setSeg('segCls', 'AB'); setSeg('segFv', '3'); setSeg('segFi', '2');
+const P_E = Math.sqrt(1 + Math.PI * Math.PI / 4), PHI_E = Math.atan2(-1, Math.PI / 2);
+function waves(){
+const N = 720, th = [...Array(N).keys()].map(i => -Math.PI + TAU * i / N);
+let v, i, info;
+if (W.cls === 'E'){
+// switch off for 0 ≤ ψ < π (capacitor charges), on for π ≤ ψ < 2π; ψ = θ + π so the plot centres the on-time
+const raw = th.map(t => { const ps = ((t + Math.PI) % TAU + TAU) % TAU; return ps < Math.PI ? {v: ps + P_E * Math.cos(ps + PHI_E) - Math.PI / 2, i: 0} : {v: 0, i: 1 - P_E * Math.sin(ps + PHI_E)}; });
+const mv = raw.reduce((s, r) => s + r.v, 0) / N;
+v = raw.map(r => r.v / mv); i = raw.map(r => r.i);
+info = ['Class E：開關＋並聯電容', '電晶體當開關。關斷時電流改流進並聯電容，電壓慢慢升起再回到零；調好負載網路後，下一次導通前電壓與斜率都剛好歸零（ZVS），電容能量不會燒掉。理想效率 100%。'];
+} else if (W.cls === 'F'){
+const V = {1: t => 1 - Math.cos(t), 3: t => 1 - 9 / 8 * Math.cos(t) + 1 / 8 * Math.cos(3 * t), 5: t => 1 - 75 / 64 * Math.cos(t) + 25 / 128 * Math.cos(3 * t) - 3 / 128 * Math.cos(5 * t), inf: t => Math.abs(t) < Math.PI / 2 ? 0 : 2}[W.fv];
+const I = {1: t => 1 + Math.cos(t), 2: t => 1 + 4 / 3 * Math.cos(t) + 1 / 3 * Math.cos(2 * t), inf: t => Math.PI * Math.max(0, Math.cos(t))}[W.fi];
+v = th.map(V); i = th.map(I);
+info = ['Class F：諧波終端', '在汲極用諧振網路讓奇次諧波看到開路（電壓往方波整形）、偶次諧波看到短路（電流往半正弦整形）。電壓低時電流大、電壓高時電流小，重疊越少效率越高；這裡用「最大平坦」波形，諧波加到無限多時效率 100%。'];
+} else {
+const c = Math.cos(W.th * Math.PI / 360);
+const raw = th.map(t => Math.max(0, Math.cos(t) - c) / (1 - c));
+const m = raw.reduce((s, x) => s + x, 0) / N;
+v = th.map(t => 1 - Math.cos(t)); i = raw.map(x => x / m);
+info = [{A: 'Class A', AB: 'Class AB', B: 'Class B', C: 'Class C'}[W.cls] + '：降導通角', '汲極接諧振槽，電壓維持正弦、擺幅到 0–2·V<sub>DD</sub>；導通角越小，電流脈衝越窄、越集中在電壓最低的時候，重疊越少。和 01 頁同一套分析，這裡換成 RF 的電壓電流波形來看。'];
+}
+return {th, v, i, info};
+}
+function drawW(){
+$('optRCA').hidden = !['AB', 'C'].includes(W.cls);
+$('optF').hidden = W.cls !== 'F';
+const R = waves(), N = R.th.length;
+const mvi = R.v.reduce((s, x, k) => s + x * R.i[k], 0) / N;
+let v1 = 0, i1 = 0; R.th.forEach((t, k) => { v1 += R.v[k] * Math.cos(t); i1 += R.i[k] * Math.cos(t); }); v1 = Math.abs(2 * v1 / N); i1 = Math.abs(2 * i1 / N);
+const eta = W.cls === 'E' ? 1 : Math.max(0, 1 - mvi);
+const vmax = Math.max(...R.v), imax = Math.max(...R.i);
+const svg = $('svgW'); clear(svg);
+const ym = Math.max(4, Math.ceil(vmax + 0.3));
+const ch = chart(svg, {x0: 52, y0: 22, w: 490, h: 250, xr: [-Math.PI, Math.PI], yr: [0, ym], xticks: [-Math.PI, -Math.PI / 2, 0, Math.PI / 2, Math.PI], xfmt: v => Math.round(v * 180 / Math.PI) + '°',
+yticks: [0, 1, 2, 3, 4].filter(v => v <= ym), yfmt: v => v + '×', ylabel: 'v_DS／V_DD 與 i_D／I_DC', xlabel: 'ωt'});
+const area = R.th.map((t, k) => [t, Math.min(R.v[k], R.i[k])]);
+svgEl('path', {d: 'M' + area.map(([t, y]) => ch.X(t).toFixed(1) + ' ' + ch.Y(y).toFixed(1)).join('L') + `L${ch.X(Math.PI)} ${ch.Y(0)}L${ch.X(-Math.PI)} ${ch.Y(0)}Z`, fill: 'var(--warn)', opacity: .22}, ch.plot);
+ch.line(R.th.map((t, k) => [t, R.v[k]]), {stroke: 'var(--accent)', 'stroke-width': 2.8});
+ch.line(R.th.map((t, k) => [t, R.i[k]]), {stroke: 'var(--on)', 'stroke-width': 2.8});
+ch.line([[-Math.PI, 1], [Math.PI, 1]], {stroke: 'var(--muted)', 'stroke-dasharray': '4 4', 'stroke-width': 1.2});
+$('legW').innerHTML = [['var(--accent)', '汲極電壓 v_DS'], ['var(--on)', '汲極電流 i_D'], ['var(--warn)', '重疊區（同時有電壓與電流 → 發熱）']].map(([c, t]) => `<span><i style="border-top-style:solid;color:${c};border-color:${c}"></i>${t}</span>`).join('');
+$('bigW').innerHTML = `<div><span>理論效率 η</span><b>${fx(eta * 100, 1)}%</b></div><div><span>峰值電壓</span><b>${fx(vmax, 2)}·V<sub>DD</sub></b></div><div><span>峰值電流</span><b>${fx(imax, 2)}·I<sub>DC</sub></b></div>`;
+$('infoW').style.setProperty('--c', W.cls === 'E' || W.cls === 'F' ? 'var(--ok)' : 'var(--accent)');
+$('infoW').innerHTML = `<h3>${R.info[0]}</h3><p>${R.info[1]}</p>`;
+const rows = [
+['基波電壓 V<sub>1</sub>／V<sub>DD</sub>', '輸出網路只讓基波功率送到負載', fx(v1, 3)],
+['基波電流 I<sub>1</sub>／I<sub>DC</sub>', '', fx(i1, 3)],
+['效率 Efficiency', W.cls === 'E' ? 'Class E 由 ZVS 條件保證：理想開關導通時 v = 0、關斷時 i = 0' : 'η = V<sub>1</sub>·I<sub>1</sub>／2（V<sub>DD</sub>·I<sub>DC</sub> = 1）＝ 1 − 平均(v·i)', fx(eta * 100, 1) + '%']
+];
+if (W.cls === 'E') rows.push(['Sokal 設計式', 'R = 0.5768·V<sub>DD</sub>²／P、C<sub>shunt</sub> = 0.1836／(ωR)、X<sub>series</sub> = 1.1525·R；p = √(1 + π²/4) = 1.862、φ = −32.5°', '3.56·V<sub>DD</sub>']);
+if (W.cls === 'F') rows.push(['最大平坦係數', '3 次：v = 1 − (9/8)cos θ + (1/8)cos 3θ；5 次：1 − (75/64)cos θ + (25/128)cos 3θ − (3/128)cos 5θ；電流 2 次：1 + (4/3)cos θ + (1/3)cos 2θ', '—']);
+$('formW').innerHTML = fmtRows(rows);
+}
+drawW();
+/* ---------- 3: load line and L-match ---------- */
+const M = {Vdd: 3.4, Vk: 0.3, P: 30, f: 1.9, R0: 50};
+const MP = {phone: {Vdd: 3.4, Vk: 0.3, P: 30, f: 1.9}, hpue: {Vdd: 4.5, Vk: 0.3, P: 32, f: 2.6}, bts: {Vdd: 48, Vk: 4, P: 50, f: 3.5}};
+const syncM = sliders([
+{k: 'Vdd', zh: '電源 V<sub>DD</sub>', en: 'Supply', min: 1, max: 50, step: 0.1, fmt: v => fx(v, 1) + ' V'},
+{k: 'Vk', zh: '膝點電壓 V<sub>knee</sub>', en: 'Knee voltage', min: 0, max: 6, step: 0.05, fmt: v => fx(v, 2) + ' V'},
+{k: 'P', zh: 'PA 輸出功率', en: 'Output power', min: 10, max: 53, step: 0.5, fmt: v => fx(v, 1) + ' dBm · ' + eng(Math.pow(10, v / 10) / 1000, 'W')},
+{k: 'f', zh: '頻率', en: 'Frequency', min: 0.4, max: 6, step: 0.05, fmt: v => fx(v, 2) + ' GHz'}
+], M, $('paramsM'), () => drawM(), 'm');
+$('presetsM').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b){ Object.assign(M, MP[b.dataset.p]); syncM(); drawM(); } });
+function drawM(){
+const P = Math.pow(10, M.P / 10) / 1000, Vs = M.Vdd - M.Vk, Ro = Vs * Vs / (2 * P), w = TAU * M.f * 1e9;
+const r = M.R0 / Ro, up = r < 1;
+const Rhi = Math.max(M.R0, Ro), Rlo = Math.min(M.R0, Ro), Q = Math.sqrt(Rhi / Rlo - 1);
+const Ls = Q * Rlo / w, Cp = Q / (Rhi * w);
+const Rm = Math.sqrt(Rhi * Rlo), Q2 = Math.sqrt(Rhi / Rm - 1);
+const Ipk = 2 * Vs / Ro / 2 * 2, Idc = 2 / Math.PI * Vs / Ro;
+$('bigM').innerHTML = `<div><span>最佳負載 R<sub>opt</sub></span><b>${eng(Ro, 'Ω')}</b></div><div><span>轉換比</span><b>${fx(Rhi / Rlo, 1)} : 1</b></div><div><span>L 型 Q</span><b>${fx(Q, 2)}</b></div><div><span>B 類 I<sub>DC</sub></span><b>${eng(Idc, 'A')}</b></div>`;
+$('formM').innerHTML = fmtRows([
+['負載線 Load line', `R<sub>opt</sub> = (V<sub>DD</sub> − V<sub>knee</sub>)²／(2·P) = ${fx(Vs, 2)}²／(2 × ${eng(P, 'W')})`, eng(Ro, 'Ω')],
+['L 型匹配 Q', `Q = √(R<sub>high</sub>／R<sub>low</sub> − 1) = √(${eng(Rhi, 'Ω')}／${eng(Rlo, 'Ω')} − 1)`, fx(Q, 2)],
+['串聯電感（低阻側）', `L = Q·R<sub>low</sub>／ω = ${fx(Q, 2)} × ${eng(Rlo, 'Ω')}／(2π × ${M.f} G)`, eng(Ls, 'H')],
+['並聯電容（高阻側）', `C = Q／(R<sub>high</sub>·ω) = ${fx(Q, 2)}／(${eng(Rhi, 'Ω')} × 2π × ${M.f} G)`, eng(Cp, 'F')],
+['頻寬粗估 Bandwidth', `相對頻寬約 1／Q；Q 越大頻寬越窄、元件損耗越敏感`, '≈ ' + fx(100 / Q, 0) + '%'],
+['改用兩段匹配', `中間阻抗 R<sub>mid</sub> = √(R<sub>high</sub>·R<sub>low</sub>) = ${eng(Rm, 'Ω')}，每段 Q = ${fx(Q2, 2)}，頻寬約 ${fx(100 / Q2, 0)}%`, fx(Q2, 2)],
+['B 類直流電流', `I<sub>DC</sub> = (2/π)·(V<sub>DD</sub> − V<sub>knee</sub>)／R<sub>opt</sub>；電源端 P<sub>DC</sub> = ${eng(M.Vdd * Idc, 'W')}，汲極效率 ${fx(P / (M.Vdd * Idc) * 100, 1)}%`, eng(Idc, 'A')]
+]);
+}
+drawM();
+/* ---------- 4: back-off, Doherty, ET ---------- */
+const B = {papr: 6, etm: 85, smin: 20};
+const syncB = sliders([
+{k: 'papr', zh: '峰均比 PAPR', en: 'Peak-to-average', min: 0, max: 12, step: 0.5, fmt: v => fx(v, 1) + ' dB'},
+{k: 'etm', zh: 'ET 調變器效率', en: 'ET modulator efficiency', min: 60, max: 95, step: 1, fmt: v => v + '%'},
+{k: 'smin', zh: 'ET 最低電源', en: 'Minimum ET supply', min: 5, max: 50, step: 1, fmt: v => v + '% V_max'}
+], B, $('paramsB'), () => { setSeg('segSig', ''); drawB(); }, 'b');
+segGroup('segSig', v => { B.papr = +v; syncB(); drawB(); }); setSeg('segSig', '6');
+// deterministic Rayleigh samples (E[r²] = 1)
+const RAY = (() => { let s = 12345; const rnd = () => (s = (s * 1103515245 + 12345) % 2147483648) / 2147483648; const a = []; for (let k = 0; k < 20000; k++) a.push(Math.sqrt(-Math.log(1 - rnd() * 0.999999))); return a; })();
+const ETA = {
+A: x => x * x / 2,
+B: x => Math.PI / 4 * x,
+D: x => x <= 0.5 ? Math.PI / 2 * x : Math.PI / 2 * x * x / (3 * x - 1),
+ET: x => B.etm / 100 * Math.PI / 4 * Math.min(1, x / Math.max(B.smin / 100, x + 0.05))
+};
+const COLB = {A: 'var(--accent)', B: 'var(--on)', D: 'var(--ok)', ET: 'var(--off)'};
+const NAMEB = {A: 'Class A', B: 'Class B（固定電源）', D: 'Doherty（對稱）', ET: 'B 類＋包絡追蹤 ET'};
+function drawB(){
+const A = Math.pow(10, B.papr / 20);
+const xs = B.papr === 0 ? [1] : RAY.map(r => Math.min(r, A) / A);
+const avg = k => { let po = 0, pd = 0; xs.forEach(x => { const e = Math.max(ETA[k](x), 1e-9); po += x * x; pd += x * x / e; }); return po / pd; };
+const svg = $('svgB'); clear(svg);
+const ch = chart(svg, {x0: 52, y0: 22, w: 490, h: 250, xr: [-20, 0], yr: [0, 100], xticks: [-20, -15, -10, -6, -3, 0], xfmt: v => v + ' dB', yticks: [0, 25, 50, 75, 100], yfmt: v => v + '%', ylabel: '效率 η（理想）', xlabel: '輸出回退 Output back-off from peak'});
+if (B.papr > 0){
+const bins = new Array(40).fill(0); xs.forEach(x => { const d = 20 * Math.log10(Math.max(x, 1e-6)); if (d > -20) bins[Math.min(39, Math.floor((d + 20) / 0.5))]++; });
+const mx = Math.max(...bins);
+bins.forEach((c, k) => { if (c) svgEl('rect', {x: ch.X(-20 + k * 0.5), y: ch.Y(c / mx * 45), width: ch.X(-19.5) - ch.X(-20) - 1, height: ch.Y(0) - ch.Y(c / mx * 45), fill: 'var(--muted)', opacity: .22}, ch.plot); });
+}
+svgEl('line', {x1: ch.X(-B.papr), x2: ch.X(-B.papr), y1: 22, y2: 272, stroke: 'var(--warn)', 'stroke-dasharray': '5 4', 'stroke-width': 1.6}, ch.plot);
+svgEl('text', {x: ch.X(-B.papr) + 4, y: 36, class: 'ref-lbl', fill: 'var(--warn)'}, ch.plot, '平均功率 −' + B.papr + ' dB');
+const pts = [...Array(201).keys()].map(k => -20 + k * 0.1);
+Object.keys(ETA).forEach(k => ch.line(pts.map(d => [d, ETA[k](Math.pow(10, d / 20)) * 100]), {stroke: COLB[k], 'stroke-width': 2.6}));
+$('legB').innerHTML = Object.keys(ETA).map(k => `<span><i style="border-top-style:solid;color:${COLB[k]};border-color:${COLB[k]}"></i>${NAMEB[k]}</span>`).join('') + '<span>灰色長條：訊號包絡功率的分布</span>';
+const res = Object.keys(ETA).map(k => [k, avg(k)]);
+$('barsB').innerHTML = res.map(([k, e]) => `<div class="bar-row"><div class="bl">${NAMEB[k]}</div><div class="bar-track"><div class="bar-fill" style="width:${e * 100}%;background:${COLB[k]}"></div></div><div class="bv">${fx(e * 100, 1)}%</div></div>`).join('');
+const eB = res[1][1], eD = res[2][1], eE = res[3][1];
+$('formB').innerHTML = fmtRows([
+['平均效率 Average', '平均 η = E[P<sub>out</sub>]／E[P<sub>DC</sub>]，以截斷瑞利分布的包絡取樣 2 萬點計算', fx(eB * 100, 1) + '%（B）'],
+['Doherty', 'x ≤ 0.5：η = (π/2)·x；x > 0.5：η = (π/2)·x²／(3x − 1)（x = 輸出電壓／最大值）', '+' + fx((eD - eB) * 100, 1) + ' 點'],
+['包絡追蹤 ET', `η = η<sub>mod</sub>·(π/4)·x／max(V<sub>min</sub>, x + 5% 餘裕)，η<sub>mod</sub> = ${B.etm}%`, '+' + fx((eE - eB) * 100, 1) + ' 點'],
+['電池電流的差別', `同樣平均輸出下，固定電源 B 類吃的電是 ET 的 ${fx(eE / eB, 2)} 倍、Doherty 的 ${fx(eD / eB, 2)} 倍`, fx(eE / eB, 2) + '×']
+]);
+}
+drawB();
+/* ---------- 5: compression and DPD ---------- */
+const D = {p: 2, psat: 33, gain: 28};
+sliders([
+{k: 'p', zh: '平滑度 p（Rapp）', en: 'Knee sharpness (1 soft – 6 sharp)', min: 0.6, max: 6, step: 0.1, fmt: v => fx(v, 1)},
+{k: 'psat', zh: '飽和輸出 P<sub>sat</sub>', en: 'Saturated output', min: 20, max: 40, step: 0.5, fmt: v => fx(v, 1) + ' dBm'},
+{k: 'gain', zh: '線性增益', en: 'Small-signal gain', min: 10, max: 35, step: 0.5, fmt: v => fx(v, 1) + ' dB'}
+], D, $('paramsD'), () => drawD(), 'd');
+function drawD(){
+const vs = Math.pow(10, D.psat / 20), g = Math.pow(10, D.gain / 20);
+const pa = vin => { const x = g * vin / vs; return vs * x / Math.pow(1 + Math.pow(x, 2 * D.p), 1 / (2 * D.p)); };
+const pin0 = D.psat - D.gain - 20, pins = [...Array(241).keys()].map(k => pin0 + k * 0.125);
+const out = pi => 20 * Math.log10(pa(Math.pow(10, pi / 20)));
+let p1 = null; pins.forEach(pi => { if (p1 === null && pi + D.gain - out(pi) >= 1) p1 = pi; });
+const svg = $('svgD'); clear(svg);
+const ch = chart(svg, {x0: 52, y0: 22, w: 490, h: 250, xr: [pin0, pin0 + 30], yr: [D.psat - 22, D.psat + 4], xticks: [0, 5, 10, 15, 20, 25, 30].map(k => +(pin0 + k).toFixed(1)), xfmt: v => fx(v, 0), yticks: [-20, -15, -10, -5, 0].map(k => D.psat + k), yfmt: v => fx(v, 0), ylabel: '輸出 dBm', xlabel: '輸入 P_in（dBm）'});
+ch.line(pins.map(pi => [pi, pi + D.gain]), {stroke: 'var(--muted)', 'stroke-dasharray': '5 4', 'stroke-width': 1.4});
+ch.line(pins.map(pi => [pi, Math.min(pi + D.gain, D.psat)]), {stroke: 'var(--ok)', 'stroke-width': 2.6});
+ch.line(pins.map(pi => [pi, out(pi)]), {stroke: 'var(--on)', 'stroke-width': 2.8});
+if (p1 !== null){ svgEl('circle', {cx: ch.X(p1), cy: ch.Y(out(p1)), r: 6, fill: 'var(--warn)'}, ch.plot); svgEl('text', {x: ch.X(p1) - 8, y: ch.Y(out(p1)) - 10, 'text-anchor': 'end', class: 'ref-lbl', fill: 'var(--warn)'}, ch.plot, 'P1dB'); }
+const o1 = p1 !== null ? out(p1) : NaN;
+$('bigD').innerHTML = `<div><span>輸出 P1dB</span><b>${fx(o1, 1)} dBm</b></div><div><span>P<sub>sat</sub> − P1dB</span><b>${fx(D.psat - o1, 1)} dB</b></div><div><span>無 DPD 時 6 dB PAPR 的平均功率上限</span><b>${fx(o1 - 6, 1)} dBm</b></div><div><span>理想 DPD</span><b>${fx(D.psat - 6, 1)} dBm</b></div>`;
+$('legD').innerHTML = [['var(--on)', 'PA 本身（Rapp 模型）'], ['var(--ok)', 'PA＋理想 DPD：線性到飽和'], ['var(--muted)', '線性外插']].map(([c, t]) => `<span><i style="border-top-style:solid;color:${c};border-color:${c}"></i>${t}</span>`).join('') + '<span>「平均功率上限」以峰值不超過 P1dB（無 DPD）或 P<sub>sat</sub>（理想 DPD）粗估</span>';
+}
+drawD();
+</script>
+</body>
+</html>

@@ -154,6 +154,23 @@ const GLOSS = {
 "RBW":["Resolution Bandwidth", "頻譜量測的解析頻寬：CISPR 在 150 kHz–30 MHz 用 9 kHz，30 MHz–1 GHz 用 120 kHz"],
 "ESD":["Electrostatic Discharge", "靜電放電"],
 "Desense":["Receiver Desensitization", "接收靈敏度劣化：板上雜訊落在 LTE／Wi-Fi／GNSS 頻段，讓手機收訊變差"],
+"dBm":["Decibel-milliwatts", "以 1 mW 為基準的功率：0 dBm = 1 mW、30 dBm = 1 W"],
+"PAE":["Power-Added Efficiency", "功率附加效率 (P_out − P_in)／P_DC，扣掉輸入驅動功率"],
+"PAPR":["Peak-to-Average Power Ratio", "峰均功率比：調變訊號峰值功率比平均功率高多少 dB"],
+"ACLR":["Adjacent Channel Leakage Ratio", "鄰道洩漏比：本通道功率比相鄰通道洩漏功率高多少 dB，PA 非線性會讓它變差"],
+"EVM":["Error Vector Magnitude", "誤差向量幅度：實際星座點偏離理想點的比例"],
+"Doherty":["Doherty Amplifier", "主放大器＋峰值放大器以 λ/4 線做負載調變，在回退功率仍維持高效率"],
+"ET／APT":["Envelope Tracking / Average Power Tracking", "包絡追蹤：PA 電源即時跟著訊號包絡；平均功率追蹤：電源依每個時槽的平均功率調整"],
+"DPD":["Digital Predistortion", "數位預失真：在基頻先做 PA 非線性的反函數，讓輸出變線性"],
+"AM/AM／AM/PM":["Amplitude-to-Amplitude / Amplitude-to-Phase Distortion", "輸入振幅改變時，輸出振幅（壓縮）與相位跟著變化的非線性"],
+"P1dB":["1 dB Compression Point", "增益比線性區掉 1 dB 時的功率"],
+"HBT":["Heterojunction Bipolar Transistor", "異質接面雙極電晶體，手機 PA 主流的 GaAs 功率元件"],
+"GaAs／GaN":["Gallium Arsenide / Gallium Nitride", "砷化鎵（手機 PA）／氮化鎵（基地台、高功率）半導體"],
+"ZVS":["Zero-Voltage Switching", "零電壓切換：開關導通瞬間兩端電壓為零，沒有電容放電損耗"],
+"R<sub>opt</sub>":["Optimum Load (Load-line) Resistance", "負載線最佳負載：(V_DD − V_knee)²／(2·P_out)"],
+"V<sub>knee</sub>":["Knee Voltage", "膝點電壓：電晶體離開飽和區所需的最小電壓"],
+"UE／HPUE":["User Equipment / High-Power UE", "使用者設備（手機）；高功率手機（Power Class 2，26 dBm）"],
+"OFDM":["Orthogonal Frequency-Division Multiplexing", "正交分頻多工，LTE／5G 的調變方式，PAPR 高"],
 "IEC 62368-1":["IEC 62368-1 Audio/Video, ICT Equipment Safety", "影音與資通訊設備安全標準，音響溫升測試用 1/8 最大不削波功率的粉紅雜訊"]
 };
 function glossary(box, keys){
