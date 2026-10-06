@@ -14,7 +14,7 @@ SITE = OUT / "_site"
 SERIES = [  # (key, number, nav name, zh, single-file stem, site file)
     ("angle", "01", "CONDUCTION ANGLE", "導通角與效率", "01-ANGLE", "conduction-angle.html"),
     ("linear", "02", "LINEAR STAGE", "A／B／AB 輸出級", "02-LINEAR", "linear-stage.html"),
-    ("thermal", "03", "THERMAL", "熱設計與熱奔潰", "03-THERMAL", "thermal.html"),
+    ("thermal", "03", "THERMAL", "熱設計與熱失控", "03-THERMAL", "thermal.html"),
     ("classd", "04", "CLASS-D", "開關放大原理", "04-CLASSD", "class-d.html"),
     ("filter", "05", "OUTPUT FILTER", "輸出濾波器設計", "05-FILTER", "output-filter.html"),
     ("layout", "06", "LAYOUT · EMI", "PCB 佈線與 EMI", "06-LAYOUT", "layout-emi.html"),

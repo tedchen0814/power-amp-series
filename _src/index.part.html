@@ -47,8 +47,8 @@ CLASS <span>A→D</span>
     </a>
     <a class="card" href="thermal.html" style="--c:var(--warn)">
       <span class="no">03 · THERMAL</span>
-      <h2>熱設計與熱奔潰<small>V<sub>be</sub> multiplier · loop gain · heatsink</small></h2>
-      <p>V<sub>be</sub> 倍增器電阻計算、<b>熱迴路增益 L</b>、30 分鐘開機熱模擬（良好設計／感測在 PCB／熱奔潰／補償過頭），以及用最壞點或 1/8 功率算散熱片熱阻。</p>
+      <h2>熱設計與熱失控<small>V<sub>be</sub> multiplier · loop gain · heatsink</small></h2>
+      <p>V<sub>be</sub> 倍增器電阻計算、<b>熱迴路增益 L</b>、30 分鐘開機熱模擬（良好設計／感測在 PCB／熱失控／補償過頭），以及用最壞點或 1/8 功率算散熱片熱阻。</p>
       <ul><li>L ≥ 1 就失控</li><li>IEC 62368-1 的 1/8 功率條件</li></ul>
       <span class="go">開啟 Open →</span>
     </a>
@@ -102,7 +102,7 @@ CLASS <span>A→D</span>
         <tbody>
           <tr><td><b>Class-A</b></td><td class="m">360°</td><td class="m">25%（阻性）／50%（電感、變壓器）</td><td>極高線性度，無交越失真</td><td>主動區連續導通</td><td>靜態功耗極高，需大散熱</td></tr>
           <tr><td><b>Class-B</b></td><td class="m">180°</td><td class="m">78.5%</td><td>交越失真</td><td>推挽交替導通</td><td>0 V 附近的死區</td></tr>
-          <tr><td><b>Class-AB</b></td><td class="m">180°–360°</td><td class="m">滿功率約 50%–70%，小功率大幅下降</td><td>高，消除大部分交越失真</td><td>靜態微導通、大訊號推挽</td><td>偏壓熱補償、熱奔潰</td></tr>
+          <tr><td><b>Class-AB</b></td><td class="m">180°–360°</td><td class="m">滿功率約 50%–70%，小功率大幅下降</td><td>高，消除大部分交越失真</td><td>靜態微導通、大訊號推挽</td><td>偏壓熱補償、熱失控</td></tr>
           <tr><td><b>Class-D</b></td><td class="m">開關</td><td class="m">中高功率 90% 以上，小功率因固定損耗下降</td><td>取決於回授、死區與濾波</td><td>飽和／截止切換</td><td>EMI、輸出濾波、死區時間</td></tr>
         </tbody>
       </table>

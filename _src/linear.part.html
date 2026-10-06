@@ -102,7 +102,7 @@ I<sub>Q</sub>·R<sub>e</sub> <span>≈</span> 26 mV
       <div class="ngroup" style="--c:var(--ok)">
         <h3>實務與手機 <span class="en">In practice and in phones</span></h3>
         <ul>
-          <li><b>偏壓會隨溫度漂移</b><span class="src pdf">原稿</span><br>V<sub>be</sub> 約 −2 mV/°C；偏壓電壓不變時，管子變熱後 I<sub>Q</sub> 增加、再更熱，形成熱奔潰的正回饋。V<sub>be</sub> 倍增器要和功率管熱耦合來追蹤溫度——詳見 <a href="thermal.html">03 熱設計頁</a>。<span class="en">Bias drifts with temperature; the Vbe multiplier must track the output devices (page 03).</span></li>
+          <li><b>偏壓會隨溫度漂移</b><span class="src pdf">原稿</span><br>V<sub>be</sub> 約 −2 mV/°C；偏壓電壓不變時，管子變熱後 I<sub>Q</sub> 增加、再更熱，形成熱失控的正回饋。V<sub>be</sub> 倍增器要和功率管熱耦合來追蹤溫度——詳見 <a href="thermal.html">03 熱設計頁</a>。<span class="en">Bias drifts with temperature; the Vbe multiplier must track the output devices (page 03).</span></li>
           <li><b>MOSFET 輸出級沒有明確的最佳點</b><span class="src add">補充</span><br>MOSFET 在偏壓區接近平方律，跨導隨電流慢慢增加，不會像 BJT 那樣在 26 mV 出現一個清楚的最佳值；橫向 MOSFET 輸出級通常偏壓較大電流。互補回授對（CFP）的最佳偏壓也和射極跟隨器不同。<span class="en">MOSFETs and CFP stages have different optima than the BJT emitter follower.</span></li>
           <li><b>手機裡的 AB 類</b><span class="src add">補充</span><br>手機喇叭用 Class-D，但有線耳機輸出（或 USB-C 耳機轉接器裡的 DAC）多是 CMOS Class-AB 或 Class-G 耳機放大器：耳機只需要毫瓦級功率、對底噪與失真很敏感，常用電荷泵產生正負電源，讓輸出以 0 V 為中心、不需要隔直電容。<span class="en">Headphone outputs use CMOS class-AB or class-G with charge-pump rails.</span></li>
         </ul>

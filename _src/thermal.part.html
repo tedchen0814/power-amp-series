@@ -1,13 +1,13 @@
 <!--#TITLE-->
-熱設計與熱奔潰 · 功率放大器
+熱設計與熱失控 · 功率放大器
 <!--#H1-->
-熱設計與熱奔潰
+熱設計與熱失控
 <!--#H1_EN-->
 V<sub>be</sub> multiplier · thermal runaway loop · heatsink sizing
 <!--#CHIP-->
 −2 mV<span>/</span>°C
 <!--#LEDE-->
-<p class="lede">AB 類的偏壓電壓固定時，功率管變熱 → V<sub>be</sub> 每升 1 °C 約降 2 mV → 同樣的偏壓推出更大的 I<sub>Q</sub> → 更熱。這是一個<b>正回饋迴路</b>，迴路增益超過 1 就是<b>熱奔潰</b>。這一頁分三段：先用 <b>V<sub>be</sub> 倍增器</b>算出偏壓電阻與它的溫度係數；再用熱模擬看射極電阻、熱耦合與補償量怎麼決定 I<sub>Q</sub> 是穩定、慢慢漂高，還是失控；最後用 B 類的最大損耗點算出散熱片需要的熱阻。
+<p class="lede">AB 類的偏壓電壓固定時，功率管變熱 → V<sub>be</sub> 每升 1 °C 約降 2 mV → 同樣的偏壓推出更大的 I<sub>Q</sub> → 更熱。這是一個<b>正回饋迴路</b>，迴路增益超過 1 就是<b>熱失控</b>。這一頁分三段：先用 <b>V<sub>be</sub> 倍增器</b>算出偏壓電阻與它的溫度係數；再用熱模擬看射極電阻、熱耦合與補償量怎麼決定 I<sub>Q</sub> 是穩定、慢慢漂高，還是失控；最後用 B 類的最大損耗點算出散熱片需要的熱阻。
   <span class="en">With a fixed bias voltage, a hotter device conducts more and heats further — positive feedback. This page sizes the Vbe multiplier, simulates the thermal loop, and sizes the heatsink from the worst-case dissipation.</span></p>
 <!--#STYLE-->
 .wf-svg{width:100%;height:auto;display:block;min-width:520px}
@@ -42,7 +42,7 @@ V<sub>be</sub> multiplier · thermal runaway loop · heatsink sizing
       <div class="badges" id="badgesL"></div>
       <div class="bigres" id="bigL"></div>
       <div class="formulas" id="formL"></div>
-      <p class="lede" style="margin-top:10px;font-size:14px">迴路增益 L &lt; 1 時，I<sub>Q</sub> 會收斂到一個比冷機時高（或低）的穩定值，放大倍數約 1／(1 − L)；L ≥ 1 時沒有穩定點，就是熱奔潰。補償過頭時 L 會變成負值，熱機後 I<sub>Q</sub> 反而下降，交越失真又回來了。
+      <p class="lede" style="margin-top:10px;font-size:14px">迴路增益 L &lt; 1 時，I<sub>Q</sub> 會收斂到一個比冷機時高（或低）的穩定值，放大倍數約 1／(1 − L)；L ≥ 1 時沒有穩定點，就是熱失控。補償過頭時 L 會變成負值，熱機後 I<sub>Q</sub> 反而下降，交越失真又回來了。
         <span class="en">L &lt; 1 settles; L ≥ 1 runs away; negative L means over-compensation and the bias falls when hot.</span></p>
     </section>
   </div>
@@ -96,7 +96,7 @@ V<sub>be</sub> multiplier · thermal runaway loop · heatsink sizing
         <h3>元件與熱阻 <span class="en">Devices and thermal path</span></h3>
         <ul>
           <li><b>R<sub>e</sub> 是第一道防線</b><span class="src txt">教科書</span><br>迴路增益分母是 R<sub>e</sub> + V<sub>T</sub>／I<sub>Q</sub>。R<sub>e</sub> 太小（為了省損耗）時，只能靠更好的熱補償與更大的散熱片撐住；R<sub>e</sub> = 0 幾乎一定失控。<span class="en">The loop-gain denominator is Re + VT/IQ.</span></li>
-          <li><b>MOSFET 也會熱奔潰</b><span class="src add">補充</span><br>垂直 MOSFET 在 ZTC 點以下的小電流區是正溫度係數，AB 類偏壓正好落在這一區，和 BJT 一樣需要補償；橫向 MOSFET 在偏壓電流下已是負溫度係數，熱穩定性較好。<span class="en">Vertical MOSFETs are positive-tempco below the ZTC point — exactly where AB bias sits.</span></li>
+          <li><b>MOSFET 也會熱失控</b><span class="src add">補充</span><br>垂直 MOSFET 在 ZTC 點以下的小電流區是正溫度係數，AB 類偏壓正好落在這一區，和 BJT 一樣需要補償；橫向 MOSFET 在偏壓電流下已是負溫度係數，熱穩定性較好。<span class="en">Vertical MOSFETs are positive-tempco below the ZTC point — exactly where AB bias sits.</span></li>
           <li><b>絕緣墊常是最大的熱阻</b><span class="src add">補充</span><br>功率管外殼通常要和散熱片絕緣，絕緣墊加導熱膏的 θ<sub>CS</sub> 常在 0.2–1 °C/W，和 θ<sub>JC</sub> 同一個等級；鎖附扭力與平整度也會明顯影響。<span class="en">The insulating pad is often as large as θJC.</span></li>
         </ul>
       </div>
@@ -221,7 +221,7 @@ function loopGain(){
 function drawSim(){
   const L = loopGain(), R = simulate(), last = R.out[R.out.length - 1];
   const stable = L < 1 && !R.runaway;
-  $('badgesL').innerHTML = [badge(L < 1, L < 1 ? `L = ${fx(L, 2)} < 1 穩定` : `L = ${fx(L, 2)} ≥ 1 熱奔潰`), badge(null, L < 0 ? '補償過頭：熱機 I_Q 下降' : L < 0.5 ? '漂移小' : L < 1 ? '漂移明顯' : '失控')].join('');
+  $('badgesL').innerHTML = [badge(L < 1, L < 1 ? `L = ${fx(L, 2)} < 1 穩定` : `L = ${fx(L, 2)} ≥ 1 熱失控`), badge(null, L < 0 ? '補償過頭：熱機 I_Q 下降' : L < 0.5 ? '漂移小' : L < 1 ? '漂移明顯' : '失控')].join('');
   $('bigL').innerHTML = `<div><span>迴路增益 L</span><b style="color:${L < 1 ? 'var(--ink)' : 'var(--warn)'}">${fx(L, 2)}</b></div><div><span>熱機 I<sub>Q</sub> ÷ 冷機 ≈ 1/(1−L)</span><b>${L < 1 ? fx(1 / (1 - L), 2) + '×' : '∞'}</b></div>`;
   const thj = S.jc + S.cs;
   $('formL').innerHTML = fmtRows([
@@ -245,12 +245,12 @@ function drawSim(){
   CI.line([[0, S.iq0], [tmax, S.iq0]], {stroke: 'var(--muted)', 'stroke-dasharray': '5 4', 'stroke-width': 1.4});
   CI.line(R.out.map(o => [o.t, o.Iq * 1000]), {stroke: 'var(--accent)', 'stroke-width': 2.8});
   if (R.runaway !== null){
-    [CT, CI].forEach(C => { svgEl('line', {x1: C.X(R.runaway), x2: C.X(R.runaway), y1: 22, y2: 258, stroke: 'var(--warn)', 'stroke-width': 2}, C.plot); svgEl('text', {x: C.X(R.runaway) + 5, y: 40, class: 'ref-lbl', fill: 'var(--warn)'}, C.plot, '熱奔潰 ' + fx(R.runaway, 0) + ' s'); });
+    [CT, CI].forEach(C => { svgEl('line', {x1: C.X(R.runaway), x2: C.X(R.runaway), y1: 22, y2: 258, stroke: 'var(--warn)', 'stroke-width': 2}, C.plot); svgEl('text', {x: C.X(R.runaway) + 5, y: 40, class: 'ref-lbl', fill: 'var(--warn)'}, C.plot, '熱失控 ' + fx(R.runaway, 0) + ' s'); });
   }
   $('legS').innerHTML = [['var(--on)', '接面 T_j', 'solid'], ['var(--teal)', '散熱片 T_hs', 'solid'], ['var(--accent)', 'I_Q', 'solid'], ['var(--muted)', '冷機設定值', 'dashed']]
     .map(([c, t, s]) => `<span><i style="border-top-style:${s};color:${c};border-color:${c}"></i>${t}</span>`).join('');
   $('bigS').innerHTML = R.runaway !== null
-    ? `<div><span>結果</span><b style="color:var(--warn)">熱奔潰</b></div><div><span>發生時間</span><b>${fx(R.runaway, 0)} s</b></div><div><span>當時 I<sub>Q</sub></span><b>${eng(last.Iq, 'A')}</b></div>`
+    ? `<div><span>結果</span><b style="color:var(--warn)">熱失控</b></div><div><span>發生時間</span><b>${fx(R.runaway, 0)} s</b></div><div><span>當時 I<sub>Q</sub></span><b>${eng(last.Iq, 'A')}</b></div>`
     : `<div><span>30 分鐘後 I<sub>Q</sub></span><b>${eng(last.Iq, 'A')}</b></div><div><span>相對冷機</span><b>${fx(last.Iq * 1000 / S.iq0 * 100, 0)}%</b></div><div><span>T<sub>j</sub></span><b>${fx(last.Tj, 0)} °C</b></div><div><span>散熱片</span><b>${fx(last.Ths, 0)} °C</b></div>`;
 }
 drawSim();

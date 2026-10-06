@@ -23,7 +23,7 @@
 </head>
 <body>
 <div class="wrap">
-<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><span class="cur" aria-current="page"><b>01 CONDUCTION ANGLE</b>導通角與效率</span><a href="linear-stage.html"><b>02 LINEAR STAGE</b>A／B／AB 輸出級</a><a href="thermal.html"><b>03 THERMAL</b>熱設計與熱奔潰</a><a href="class-d.html"><b>04 CLASS-D</b>開關放大原理</a><a href="output-filter.html"><b>05 OUTPUT FILTER</b>輸出濾波器設計</a><a href="layout-emi.html"><b>06 LAYOUT · EMI</b>PCB 佈線與 EMI</a><a href="rf-pa.html"><b>07 RF PA</b>射頻功率放大器</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://poe-pd-series.vercel.app/" target="_blank" rel="noopener"><b>↗ PoE PD</b>受電端系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a></nav>
+<nav class="series" aria-label="系列 Series"><span class="lab">系列 Series</span><a href="./"><b>HOME</b>系列首頁</a><span class="cur" aria-current="page"><b>01 CONDUCTION ANGLE</b>導通角與效率</span><a href="linear-stage.html"><b>02 LINEAR STAGE</b>A／B／AB 輸出級</a><a href="thermal.html"><b>03 THERMAL</b>熱設計與熱失控</a><a href="class-d.html"><b>04 CLASS-D</b>開關放大原理</a><a href="output-filter.html"><b>05 OUTPUT FILTER</b>輸出濾波器設計</a><a href="layout-emi.html"><b>06 LAYOUT · EMI</b>PCB 佈線與 EMI</a><a href="rf-pa.html"><b>07 RF PA</b>射頻功率放大器</a><a href="https://dcdc-topology-series.vercel.app/" target="_blank" rel="noopener"><b>↗ DC-DC</b>拓撲系列</a><a href="https://poe-pd-series.vercel.app/" target="_blank" rel="noopener"><b>↗ PoE PD</b>受電端系列</a><a href="https://multiphase-vrm-series.vercel.app/" target="_blank" rel="noopener"><b>↗ 多相 VRM</b>CPU 核心供電</a></nav>
 <header>
 <div>
 <div class="eyebrow">Power Amplifier Series · 01</div>
@@ -267,7 +267,7 @@ $('formulas').innerHTML = [
 ['直流電流 DC current', `I<sub>DC</sub> = [2·sin(θ/2) − θ·cos(θ/2)] ／ [2π·(1 − cos(θ/2))] = <b>${fx(K.idc, 3)}</b>`, fx(K.idc, 3)],
 ['基波電流 Fundamental', `I<sub>1</sub> = [θ − sin θ] ／ [2π·(1 − cos(θ/2))] = <b>${fx(K.i1, 3)}</b>`, fx(K.i1, 3)],
 ['效率 Efficiency', `η = (V<sub>pk</sub>·I<sub>1</sub>/2) ／ (V<sub>DC</sub>·I<sub>DC</sub>) = I<sub>1</sub> ／ (2·I<sub>DC</sub>) = ${fx(K.i1, 3)} ／ ${fx(2 * K.idc, 3)}`, fx(K.eta * 100, 1) + '%'],
-['相對輸出功率 Output vs class A', `P ∝ I<sub>1</sub>；A 類 I<sub>1</sub> = 0.5 → 10·log(${fx(K.i1, 3)} ／ 0.5)`, fx(10 * Math.log10(K.prel), 2) + ' dB'],
+['相對輸出功率 Output vs class A', `固定 I<sub>max</sub>、滿擺幅 V<sub>pk</sub> = V<sub>DC</sub>（負載隨導通角重新匹配）時 P = V<sub>pk</sub>·I<sub>1</sub>/2 ∝ I<sub>1</sub>；A 類 I<sub>1</sub> = 0.5 → 10·log(${fx(K.i1, 3)} ／ 0.5)`, fx(10 * Math.log10(K.prel), 2) + ' dB'],
 ['θ（弧度）', `θ = ${S.th}° = ${fx(th, 3)} rad，cos(θ/2) = ${fx(K.c, 3)}`, fx(th, 3)]
 ].map(([n, e, r]) => `<div class="f-row"><div class="name">${n}</div><div class="eq">${e}</div><div class="res">${r}</div></div>`).join('');
 }
