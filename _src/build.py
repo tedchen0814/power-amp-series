@@ -24,7 +24,7 @@ SOON = [  # planned pages, shown greyed out in the nav
 ]
 EXTERNAL = [
     ("https://dcdc-topology-series.vercel.app/", "↗ DC-DC", "拓撲系列"),
-    ("https://poe-pd-series.vercel.app/", "↗ PoE PD", "受電端系列"),
+    ("https://poe-pd-series.vercel.app/", "↗ PoE", "乙太網路供電"),
     ("https://multiphase-vrm-series.vercel.app/", "↗ 多相 VRM", "CPU 核心供電"),
 ]
 
